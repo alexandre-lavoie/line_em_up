@@ -9,8 +9,12 @@ class Algorithm(ABC):
         self.__heuristic = heuristic
 
     @property
+    def player_index(self) -> int:
+        return self.__heuristic.player_index
+
+    @property
     def max_depth(self) -> int:
-        return self.__heuristic.parameters.player_depths[self.__heuristic.player_index]
+        return self.__heuristic.parameters.player_depths[self.player_index]
 
     @property
     def max_time(self) -> float:
