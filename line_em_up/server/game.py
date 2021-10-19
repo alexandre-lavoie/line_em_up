@@ -181,6 +181,9 @@ class Game:
 
         board_size = self._parameters.board_size
 
+        if not any(any(tile == Tile.EMPTY.value for tile in row) for row in self._board):
+            return self.__end_game(None)
+
         for i in range(board_size):
             for j in range(board_size):
                 point = Vector2(i, j)
