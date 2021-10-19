@@ -9,6 +9,14 @@ class Heuristic(ABC):
         self._player_index = player_index
         self._parameters = parameters
 
+    @property
+    def player_index(self) -> int:
+        return self._player_index
+
+    @property
+    def parameters(self) -> Parameters:
+        return self._parameters
+
     def get_score(self, board: Board) -> float:
         return 0
 
