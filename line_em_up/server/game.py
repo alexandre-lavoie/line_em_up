@@ -78,6 +78,10 @@ class Game:
 
     @property
     def board(self) -> Board:
+        return [[v for v in row] for row in self._board]
+    
+    @property
+    def pretty_board(self) -> Board:
         return [[tile_to_emoji(v) for v in row] for row in self._board]
 
     @property
@@ -148,8 +152,8 @@ class Game:
 
     def next_packet(self) -> PlayPacket:
         return PlayPacket(
-            board=self._board,
-            pretty_board=self.board,
+            board=self.board,
+            pretty_board=self.pretty_board,
             player_id=self._players[self._player_turn] if not self._complete else None
         )
 

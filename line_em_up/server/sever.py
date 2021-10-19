@@ -41,7 +41,7 @@ class Server:
 
             return render_template('view.html', 
                 game_uuid=game_uuid, 
-                board=game.board, 
+                board=game.pretty_board, 
                 players_types=game.players_types, 
                 playing=game.all_players(),
                 winner=game.winner,
@@ -60,7 +60,7 @@ class Server:
 
             return render_template('play.html', 
                 game_uuid=game_uuid, 
-                board=game.board, 
+                board=game.pretty_board, 
                 playing=game.all_players(),
                 winner=game.winner
             )
