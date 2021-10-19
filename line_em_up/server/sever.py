@@ -131,7 +131,7 @@ class Server:
 
         def __win(game: Game):
             packet = WinPacket(
-                player_id=str(game.winner)
+                player_id=game.winner
             )
 
             emit("win", packet.to_dict(), to=game.uuid)
