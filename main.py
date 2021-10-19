@@ -7,7 +7,7 @@ import os
 if __name__ == "__main__":
     load_dotenv()
 
-    parser = ArgumentParser(description="COMP 472 - Mini Project 2")
+    parser = ArgumentParser(description="Line 'Em Up")
 
     type_parser = parser.add_subparsers(title="type", dest="type", description="Type of executable to run.")
     client_parser = type_parser.add_parser("client")
