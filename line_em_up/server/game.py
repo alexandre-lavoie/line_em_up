@@ -1,4 +1,4 @@
-from ..datatypes import Parameters, MovePacket, Board, Tile, PlayPacket, M2Exception, tile_to_emoji, Vector2
+from ..datatypes import Parameters, MovePacket, Board, Tile, PlayPacket, M2Exception, tile_to_emoji, Vector2, PlayerType
 import random
 from typing import List, Union, Tuple, Union
 from enum import Enum, auto
@@ -19,6 +19,7 @@ class Game:
     _uuid: str
     _parameters: Parameters
     _players: List[str]
+    _player_types: List[PlayerType]
     _player_turn: int
     _board: Board
     _winner: str
@@ -29,6 +30,7 @@ class Game:
         self._uuid = uuid
         self._parameters = parameters
         self._players = []
+        self._player_types = []
         self._player_turn = 0
         self._winner = None
         self._complete = False
@@ -64,7 +66,15 @@ class Game:
 
     @property
     def players(self) -> List[str]:
-        return [player for player in self._players]
+        return self._players
+
+    @property
+    def player_types(self) -> List[PlayerType]:
+        return self._player_types
+
+    @property
+    def players_types(self) -> List[Tuple[str, PlayerType]]:
+        return list(zip(self.players, self.player_types))
 
     @property
     def board(self) -> Board:
@@ -81,10 +91,11 @@ class Game:
     def reset_time(self):
         self._time = time.time()
 
-    def join(self, player_id: str) -> bool:
+    def join(self, player_id: str, player_type: PlayerType) -> bool:
         if self.all_players(): return False
 
         self._players.append(player_id)
+        self._player_types.append(player_type)
 
         return True
 
@@ -105,10 +116,6 @@ class Game:
 
         player_id = packet.player_id
 
-        if play_time - self._time > self._parameters.max_time:
-            self.__end_game(self.get_other_player(player_id))
-            raise InvalidException("Too slow.")
-
         if not player_id in self._players:
             raise M2Exception("Player not in game.")
 
@@ -116,6 +123,11 @@ class Game:
             raise M2Exception("Game not started.")
 
         player_index = self._players.index(player_id)
+        player_type = self._player_types[player_index]
+
+        if player_type == PlayerType.AI and play_time - self._time > self._parameters.max_time:
+            self.__end_game(self.get_other_player(player_id))
+            raise InvalidException("Too slow.")
 
         if not player_index == self._player_turn:
             raise M2Exception("Not player turn.")
@@ -123,8 +135,11 @@ class Game:
         (x, y) = packet.move
 
         if not self._board[y][x] == Tile.EMPTY.value:
-            self.__end_game(self.get_other_player(player_id))
-            raise InvalidException("Invalid move.")
+            if player_type == PlayerType.AI:
+                self.__end_game(self.get_other_player(player_id))
+                raise InvalidException("Invalid move.")
+            elif player_type == PlayerType.HUMAN:
+                raise M2Exception("Invalid move.")
 
         tile = [Tile.WHITE.value, Tile.BLACK.value][player_index]
 

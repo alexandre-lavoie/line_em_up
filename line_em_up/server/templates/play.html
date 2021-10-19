@@ -101,7 +101,7 @@
             }
 
             function join(player_id) {
-                socket.emit("join", {player_id, game_uuid});
+                socket.emit("join", {player_id, player_type: "human", game_uuid});
             }
 
             function play(move) {
@@ -139,8 +139,8 @@
             <p class="text-center">OR</p>
 
             <div class="card p-4">
-                <pre class="m-0">python3 main.py client ai PLAYER_ID {{game_uuid}}</pre>
-                <pre class="m-0">python3 main.py client human PLAYER_ID {{game_uuid}}</pre>
+                <pre class="m-0">python3 main.py client ai {{game_uuid}} PLAYER_ID</pre>
+                <pre class="m-0">python3 main.py client human {{game_uuid}} PLAYER_ID</pre>
             </div>
         </div>
     </body>

@@ -6,9 +6,13 @@ from enum import Enum
 class M2Exception(Exception):
     pass
 
-class AlgorithmType(Enum):
+class AlgorithmType(str, Enum):
     MINIMAX = "minimax"
     ALPHABETA = "alphabeta"
+
+class PlayerType(str, Enum):
+    HUMAN = "human"
+    AI = "ai"
 
 class Tile(Enum):
     EMPTY = 0
@@ -30,14 +34,16 @@ def tile_to_emoji(tile: Union[Tile, int]) -> str:
 
 Board = List[List[Tile]]
 Move = Tuple[int, int]
+GameUUID = str
+PlayerID = str
 
 @dataclass_json
 @dataclass
 class Config:
-    is_human: bool
     url: str
-    player_id: str
-    game_uuid: str
+    player_id: PlayerID
+    player_type: PlayerType
+    game_uuid: GameUUID
     debug: bool
 
 @dataclass_json
@@ -54,7 +60,7 @@ class Parameters:
 @dataclass_json
 @dataclass
 class PlayPacket:
-    player_id: str
+    player_id: Union[PlayerID, None]
     board: Board
     pretty_board: List[List[str]]
 
@@ -66,30 +72,37 @@ class ErrorPacket:
 @dataclass_json
 @dataclass
 class MovePacket:
-    player_id: str
+    player_id: PlayerID
     move: Move
 
 @dataclass_json
 @dataclass
+class ParametersPacket:
+    game_uuid: GameUUID
+
+@dataclass_json
+@dataclass
 class WinPacket:
-    player_id: str
+    player_id: Union[PlayerID, None]
 
 @dataclass_json
 @dataclass
 class JoinPacket:
-    game_uuid: str
-    player_id: str
+    game_uuid: GameUUID
+    player_id: PlayerID
+    player_type: PlayerType
 
 @dataclass_json
 @dataclass
 class JoinResponsePacket:
-    player_id: str
+    player_id: PlayerID
     player_index: int
+    player_type: PlayerType
 
 @dataclass_json
 @dataclass
 class ViewPacket:
-    game_uuid: str
+    game_uuid: GameUUID
 
 class Vector2:
     x: float

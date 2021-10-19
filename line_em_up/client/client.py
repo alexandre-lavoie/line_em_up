@@ -1,4 +1,4 @@
-from ..datatypes import Parameters, PlayPacket, MovePacket, ViewPacket, JoinPacket, JoinResponsePacket, AlgorithmType, WinPacket
+from ..datatypes import Parameters, PlayPacket, MovePacket, ViewPacket, JoinPacket, JoinResponsePacket, AlgorithmType, WinPacket, PlayerType
 from ..datatypes import Config
 from .players import Player, HumanPlayer, AIPlayer
 from .heuristics import Heuristic1, Heuristic2
@@ -30,34 +30,41 @@ class Client(ABC):
         return self._done
 
     def init_player(self):
-        if self._config.is_human:
+        if self._config.player_type == PlayerType.HUMAN:
             self._player = HumanPlayer()
-        else:
+        elif self._config.player_type == PlayerType.AI:
             index = self.player_index
             algorithm_name = self._parameters.algorithm
             heuristic_index = self._parameters.heuristics[index]
 
-            if heuristic_index == 1:
-                heuristic = Heuristic1(self._parameters)
-            elif heuristic_index == 2:
-                heuristic = Heuristic2(self._parameters)
+            heuristic_types = {
+                1: Heuristic1, 
+                2: Heuristic2
+            }
+            if heuristic_index in heuristic_types:
+                heuristic = heuristic_types[heuristic_index](
+                    player_index=index, 
+                    parameters=self._parameters
+                )
             else:
                 raise Exception(f"Unknown heuristic {heuristic_index}.")
 
-            if algorithm_name == AlgorithmType.MINIMAX:
-                algorithm = MiniMax(
-                    heuristic=heuristic
-                )
-            elif algorithm_name == AlgorithmType.ALPHABETA:
-                algorithm = AlphaBeta(
+            algorithm_types = {
+                AlgorithmType.MINIMAX: MiniMax,
+                AlgorithmType.ALPHABETA: AlphaBeta
+            }
+            if algorithm_name in algorithm_types:
+                algorithm = algorithm_types[algorithm_name](
                     heuristic=heuristic
                 )
             else:
                 raise Exception(f"Unknown algorithm {algorithm_name}.")
-            
+
             self._player = AIPlayer(
                 algorithm=algorithm
             )
+        else:
+            raise Exception("Unimplemented PlayerType.")
 
     @abstractmethod
     def run(self):
@@ -97,6 +104,7 @@ class NetworkClient(Client):
 
             join_packet = JoinPacket(
                 player_id=self._config.player_id,
+                player_type=self._config.player_type,
                 game_uuid=self._config.game_uuid
             )
 
