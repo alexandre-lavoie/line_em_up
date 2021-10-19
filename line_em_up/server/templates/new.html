@@ -1,0 +1,62 @@
+<html>
+    <head>
+        {% include "head.html" %}
+    </head>
+    <body>
+        {% include "nav.html" %}
+
+        <br/>
+        <h3 class="text-center">New Game</h3>
+
+        {% if error %}
+        <div class="px-4">
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        </div>
+        {% else %}
+        <br/>
+        {% endif %}
+
+        <form class="card mx-4 p-4" method="POST">
+            <label for="board_size">Board Size:</label>
+            <input class="form-control" type="number" name="board_size" id="board_size" min="3" max="10" value="3"/>
+            <br/>
+
+            <label for="block_count">Block Count:</label>
+            <input class="form-control" type="number" name="block_count" id="block_count" min="0" value="0"/>
+            <br/>
+
+            <label for="line_up_size">Line Up Size:</label>
+            <input class="form-control" type="number" name="line_up_size" id="block_count" min="3" value="3"/>
+            <br/>
+
+            <label>Player Depths:</label>
+            <div class="input-group">
+                <input class="form-control" type="number" name="player_depth1" id="player_depth1" min="1" value="1"/>
+                <input class="form-control" type="number" name="player_depth2" id="player_depth2" min="1" value="1"/>
+            </div>
+            <br/>
+
+            <label for="max_time">Max Time:</label>
+            <input class="form-control" type="number" name="max_time" id="max_time" min="0" value="1"/>
+            <br/>
+
+            <label for="algorithm">Algorithm:</label>
+            <select class="form-control" id="algorithm" name="algorithm">
+                <option value="alphabeta">AlphaBeta</option>
+                <option value="minimax">MiniMax</option>
+            </select>
+            <br/>
+
+            <label>Heuristics:</label>
+            <div class="input-group">
+                <input class="form-control" type="number" name="heuristic1" id="heuristic1" min="1" max="2" value="1"/>
+                <input class="form-control" type="number" name="heuristic2" id="heuristic2" min="1" max="2" value="1"/>
+            </div>
+            <br/>
+
+            <input class="btn btn-primary" type="submit" value="Start"/>
+        </form>
+    </body>
+</html>

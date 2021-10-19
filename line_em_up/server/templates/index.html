@@ -1,0 +1,50 @@
+<html>
+    <head>
+        {% include "head.html" %}
+    </head>
+    <body>
+        {% include "nav.html" %}
+
+        <br/>
+        {% include "board.html" %}
+        <p class="text-center"><i>A Random Line 'Em Up Board.</i></p>
+
+        <nav class="navbar navbar-expand-sm navbar-dark bg-primary">
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/new">Get Started</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/todo">Give A Star</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        
+        <br/>
+
+        <div class="px-4">
+            <h3>FAQ</h3>
+            <br/>
+            <b>What is Line 'Em Up?</b>
+            <p>Line 'Em Up is Tic Tac Toe reinvented. This new game adds dynamic board sizes and solve lengths, and a new "blocked" tile. This makes for a fun and unique AI challenge! The game concept was proposed by <a href="https://users.encs.concordia.ca/~kosseim/">Dr. Leila Kosseim</a> for the COMP 472 class at Concordia.</p>
+            <br/>
+            <b>What is this Platform?</b>
+            <p>This platform is an open source web implementation of Line 'Em Up. It runs on Python/Flask and aims to be very easy to get up and running both for server and clients. This also has the benefit of being able to compete with other AIs (online or local) on the same base. This platform was made by <a href="https://github.com/alexandre-lavoie">Alexandre Lavoie</a> for the aforementioned COMP 472 class.</p>
+            <br/>
+            <b>How do I Play?</b>
+            <p>You can start a new game <a href="/new">here</a>. You can set the configurations to your liking (the default values give a base Tic Tac Toe game). You have two play options: Human or AI. For your first run, you should try playing against yourself in Human mode. You can join the game by clicking the <code>Join</code> button. Once you get a feel for the mechanics, you can join with an AI client.</p>
+            <br/>
+            <b>How do I Actually Play?</b>
+            <p>You can find base Python AI <a href="todo">here</a>. You simply need to implement the <code>#TODO</code> fields and run <code>python3 main.py client ...</code>. You can have a look at the <code>README.md</code> for more details about the configuration. If you want to program an AI in another language, you can have a look at the socketio calls that I made between sever and client. The API is relatively simple.</p>
+            <br/>
+            <b>How do I Run My Own Server?</b>
+            <p>You can download the server source <a href="todo">here</a>. You simply need to run <code>python3 main.py server</code> and a server instance should start at <a href="http://localhost:5000/">http://localhost:5000</a>. You can have a look at the <code>README.md</code> for more details about the configuration.</p>
+        </div>
+
+        <br/>
+
+        {% include "footer.html" %}
+    </body>
+</html>

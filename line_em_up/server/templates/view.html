@@ -1,0 +1,106 @@
+<html>
+    <head>
+        {% include "head.html" %}
+
+        <script type="text/javascript" charset="utf-8">
+            const game_uuid = "{{ game_uuid }}";
+
+            let socket = io();
+
+            socket.on("connect", () => {
+                socket.emit("view", {game_uuid});
+            });
+
+            socket.on("view", data => {
+                if(data.error) {
+                    window.location.replace("/");
+                }
+            });
+
+            socket.on("join", data => {
+                let message = document.getElementById("message");
+                message.innerText = `${data.player_id} Joined`;
+
+                let table = document.getElementById("players");
+                let row = table.insertRow(-1);
+                var cell = row.insertCell(0);
+                cell.id = `player_id_${data.player_id}`;
+                cell.innerText = data.player_id;
+            });
+
+            socket.on("win", data => {
+                let message = document.getElementById("message");
+                if(data.player_id) {
+                    let message = document.getElementById("message");
+                    message.innerText = `${data.player_id} Won`;
+
+                    let player_id = document.getElementById(`player_id_${data.player_id}`);
+                    player_id.innerHTML = "&#x1f451;" + " " + player_id.innerHTML;
+
+                    document.getElementById("join_container").remove();
+                } else {
+                    message.innerText = `Tie`;
+                }
+            });
+
+            socket.on("play", data => {
+                if(data.player_id) {
+                    let message = document.getElementById("message");
+                    message.innerText = `Playing`;
+                }
+
+                let board = data.pretty_board;
+
+                for(let i = 0; i < board.length; i++) {
+                    for(let j = 0; j < board[i].length; j++) {
+                        let id = `game_board_${i}_${j}`;
+                        let td = document.getElementById(id);
+
+                        td.innerHTML = board[i][j];
+                    }
+                }
+            });
+        </script>
+    </head>
+    <body>
+        {% include "nav.html" %}
+
+        <br/>
+
+        <div class="d-flex justify-content-center">
+            <div id="message" class="alert alert-dark text-center">
+                {% if is_complete %}
+                {% if winner %}
+                {{winner}} Won
+                {% else %}
+                Tie
+                {% endif %}
+                {% elif playing %}
+                Playing
+                {% else %}
+                Waiting for Players
+                {% endif %}
+            </div>
+        </div>
+
+        <br/>
+        {% include "board.html" %}
+        <br/>
+
+        <table id="players" class="table table-bordered d-flex justify-content-center">
+            <tr>
+                <th>Players</th>
+            </tr>
+            {% for player in players %}
+            <tr><td id="player_id_{{player}}">{% if winner == player %}&#x1f451; {% endif %}{{ player }}</td></tr>
+            {% endfor %}
+        </table>
+
+        <br />
+        {% if not is_complete %}
+        <div id="join_container" class="d-flex justify-content-center">
+            <a target="_blank" href="/play/{{game_uuid}}"><button class="btn btn-primary">Join</button></a>
+        </div>
+        {% endif %}
+    </body>
+</html>
