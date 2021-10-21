@@ -30,6 +30,9 @@ class Algorithm(ABC):
     def player_index(self) -> int:
         return self.__heuristic.player_index
 
+    def get_score(self, data: any) -> float:
+        return self.__heuristic.get_score(data)
+
     @property
     def max_depth(self) -> int:
         return self.__heuristic.parameters.player_depth1 if self.player_index == 0 else self.__heuristic.parameters.player_depth2
