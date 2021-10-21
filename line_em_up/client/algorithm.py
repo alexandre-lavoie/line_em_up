@@ -42,6 +42,10 @@ class Algorithm(ABC):
     def line_up_size(self) -> int:
         return self.__heuristic.parameters.line_up_size
 
+    @property
+    def board_size(self) -> int:
+        return self.__heuristic.parameters.board_size
+
     @abstractmethod
     def next_move(self, packet: PlayPacket) -> Move:
         return (0, 0)
