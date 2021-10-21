@@ -143,10 +143,8 @@ class Game:
             elif player_type == PlayerType.HUMAN:
                 raise LEMException("Invalid move")
 
-        tile = [Tile.WHITE, Tile.BLACK][player_index]
-
         self._moves.append((x, y))
-        self._tiles.add((x, y, tile))
+        self._tiles.add((x, y, Tile.WHITE if player_index == 0 else Tile.BLACK))
         self._player_turn = (self._player_turn + 1) % len(self._players)
 
     def next_packet(self) -> PlayPacket:

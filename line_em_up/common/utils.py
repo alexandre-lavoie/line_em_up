@@ -24,6 +24,4 @@ def make_line(point: Tuple[int, int], direction: Tuple[int, int], length: int, b
         points.append(point)
         point = tuple([p + d for p, d in zip(point, direction)])
 
-    print(points)
-
     return points
