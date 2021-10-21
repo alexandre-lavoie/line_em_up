@@ -15,18 +15,6 @@ class Tile(Enum):
     BLACK = 2
     BLOCK = 3
 
-def tile_to_emoji(tile: Tile) -> str:
-    if tile == Tile.EMPTY:
-        return "&#x2b1c;"
-    elif tile == Tile.WHITE:
-        return "&#x1f3c0;"
-    elif tile == Tile.BLACK:
-        return "&#x1f3b1;"
-    elif tile == Tile.BLOCK:
-        return "&#x26d4;"
-    else:
-        return "&#x2754;"
-
 Board = List[List[Tile]]
 Move = Tuple[int, int]
 GameUUID = str

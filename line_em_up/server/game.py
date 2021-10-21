@@ -1,4 +1,4 @@
-from ..common import Parameters, MovePacket, Board, Tile, PlayPacket, LEMException, tile_to_emoji, PlayerType, PlayerID, GameUUID
+from ..common import Parameters, MovePacket, Board, Tile, PlayPacket, LEMException, tile_to_emoji, PlayerType, PlayerID, GameUUID, make_line
 import random
 from typing import List, Union, Tuple, Union, Set
 from enum import Enum, auto
@@ -159,34 +159,22 @@ class Game:
             blocks=list(self._blocks)
         )
 
-    def __make_line(self, point: Tuple[int, int], direction: Tuple[int, int], length: int) -> Union[List[Tuple[int, int]], None]:
-        points = []
-
-        for _ in range(length):
-            for v in point:
-                if v < 0 or v >= self.board_size:
-                    return None
-
-            points.append(point)
-            point = tuple([p + d for p, d in zip(point, direction)])
-
-        return points
-
     def is_complete(self) -> bool:
         if self._complete:
             return True
 
         for x, y, tile in self._tiles:
-            for direction in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, -1)]:
-                line = self.__make_line(
+            for direction in [(1, 0), (1, 1), (0, 1), (1, -1)]:
+                line = make_line(
                     point=(x, y), 
                     direction=direction, 
-                    length=self._parameters.line_up_size
+                    length=self._parameters.line_up_size,
+                    board_size=self.board_size
                 )
 
                 if not line: continue
 
-                if all((lx, ly, tile) in self._moves for lx, ly in line):
+                if all((lx, ly, tile) in self._tiles for lx, ly in line):
                     player_index = 0 if tile == Tile.WHITE else 1
                     return self.__end_game(self.players[player_index])
 
