@@ -1,7 +1,7 @@
-from .algorithms import Algorithm
+from .algorithm import Algorithm
 from typing import Tuple, List
 from abc import ABC, abstractmethod
-from ..datatypes import PlayPacket, Move
+from ..common import PlayPacket, Move
 
 class Player(ABC):
     @abstractmethod

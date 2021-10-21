@@ -1,0 +1,98 @@
+<html>
+    <head>
+        {% include "head.html" %}
+        
+        <script type="text/javascript" src="/game.js"></script>
+        <script type="text/javascript" charset="utf-8">
+            const GAME_UUID = "{{ game_uuid }}";
+        </script>
+        <script type="text/javascript" charset="utf-8">
+            let socket = io();
+            let PLAYER_ID = null;
+
+            socket.on("connect", () => {
+                socket.emit("view", {game_uuid: GAME_UUID});
+            });
+
+            socket.on("error", handle_error);
+
+            function joinHandler() {
+                let pid = document.getElementById("player_id");
+                PLAYER_ID = pid.value;
+                join(pid.value, GAME_UUID);
+            }
+
+            socket.on("join", ({ player_id }) => {
+                if(player_id !== PLAYER_ID) return;
+
+                set_message("Waiting for Opponent");
+
+                document.getElementById("join_container").remove();
+                document.getElementById("board_container").classList.remove("d-none");
+
+                addTileClick();
+            });
+
+            socket.on("win", data => {
+                window.location.replace(`/view/${GAME_UUID}`);
+            });
+
+            function playHandler(event) {
+                let tile_id = event.target.id;
+                let split = tile_id.split("_");
+                let move = [parseInt(split[3]), parseInt(split[2])];
+                play(PLAYER_ID, move);
+            }
+
+            socket.on("play", ({ player_id, emoji_board }) => {
+                if(PLAYER_ID == null) return;
+
+                let message = document.getElementById("message");
+                if(player_id === PLAYER_ID) {
+                    set_message("Your Turn");
+                    addTileClick(playHandler);
+                } else {
+                    set_message("Opponent's Turn");
+                    removeTileClick();
+                }
+
+                update_board(emoji_board);
+            });
+        </script>
+    </head>
+    <body>
+        {% include "nav.html" %}
+
+        <br/>
+        <div class="d-flex justify-content-center">
+            <div id="message" class="alert alert-dark text-center">
+                Join Game
+            </div>
+        </div>
+
+        
+        <div id="board_container" class="d-none">
+        <br/>
+        {% include "board.html" %}
+        <br/>
+        </div>
+        
+
+        <div id="join_container" class="mx-4">
+            <div class="card p-4">
+                <label for="player_id">Player Id:</label>
+                <input id="player_id" class="form-control" />
+                <br/>
+                <button class="btn btn-primary" onclick="joinHandler()">Join</button>
+            </div>
+
+            <br/>
+            <p class="text-center">OR</p>
+
+            <div class="card p-4">
+                <pre class="m-0">python3 main.py client ai --game {{game_uuid}}</pre>
+                <pre class="m-0">python3 main.py client human --game {{game_uuid}}</pre>
+            </div>
+        </div>
+    </body>
+</html>

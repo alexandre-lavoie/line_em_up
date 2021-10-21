@@ -1,8 +1,8 @@
 from .client import NetworkClient
-from ..datatypes import Config
+from .config import ClientConfig
 from typing import Union
 
-def client_main(config: Config):
+def client_main(config: ClientConfig):
     client = NetworkClient(config)
 
     client.run()

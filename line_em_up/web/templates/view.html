@@ -2,67 +2,52 @@
     <head>
         {% include "head.html" %}
 
+        <script type="text/javascript" src="/game.js"></script>
+        <script type="text/javascript">
+            const GAME_UUID = "{{ game_uuid }}";
+        </script>
         <script type="text/javascript" charset="utf-8">
-            const game_uuid = "{{ game_uuid }}";
-
             let socket = io();
 
             socket.on("connect", () => {
-                socket.emit("view", {game_uuid});
+                socket.emit("view", {game_uuid: GAME_UUID});
             });
 
-            socket.on("view", data => {
-                if(data.error) {
-                    window.location.replace("/");
-                }
-            });
+            socket.on("error", handle_error);
 
-            socket.on("join", data => {
-                let message = document.getElementById("message");
-                message.innerText = `${data.player_id} Joined`;
+            socket.on("join", ({ player_id, player_type }) => {
+                set_message(`${player_id} Joined`)
 
                 let table = document.getElementById("players");
                 let row = table.insertRow(-1);
                 let cell0 = row.insertCell(-1);
-                cell0.id = `player_id_${data.player_id}`;
-                cell0.innerText = data.player_id;
+                cell0.id = `player_id_${player_id}`;
+                cell0.innerText = player_id;
 
                 let cell1 = row.insertCell(-1);
-                cell1.id = `player_type_${data.player_id}`;
-                cell1.innerHTML = (data.player_type == "human") ? "&#x1f466;" : "&#129302;";
+                cell1.id = `player_type_${player_id}`;
+                cell1.innerHTML = (player_type == "human") ? "&#x1f466;" : "&#129302;";
             });
 
-            socket.on("win", data => {
-                let message = document.getElementById("message");
-                if(data.player_id) {
-                    let message = document.getElementById("message");
-                    message.innerText = `${data.player_id} Won`;
+            socket.on("win", ({ player_id }) => {
+                if(player_id !== null) {
+                    set_message(`${player_id} Won`);
 
-                    let player_type = document.getElementById(`player_type_${data.player_id}`);
+                    let player_type = document.getElementById(`player_type_${player_id}`);
                     player_type.innerHTML = player_type.innerHTML + "&#x1f451;";
-
-                    document.getElementById("join_container").remove();
                 } else {
-                    message.innerText = `Tie`;
+                    set_message("Tie");
                 }
+
+                document.getElementById("join_container").remove();
             });
 
-            socket.on("play", data => {
-                if(data.player_id) {
-                    let message = document.getElementById("message");
-                    message.innerText = `Playing`;
+            socket.on("play", ({ player_id, emoji_board }) => {
+                if(player_id != null) {
+                    set_message("Playing");
                 }
 
-                let board = data.pretty_board;
-
-                for(let i = 0; i < board.length; i++) {
-                    for(let j = 0; j < board[i].length; j++) {
-                        let id = `game_board_${i}_${j}`;
-                        let td = document.getElementById(id);
-
-                        td.innerHTML = board[i][j];
-                    }
-                }
+                update_board(emoji_board);
             });
         </script>
     </head>
@@ -74,10 +59,10 @@
         <div class="d-flex justify-content-center">
             <div id="message" class="alert alert-dark text-center">
                 {% if is_complete %}
-                {% if winner %}
-                {{winner}} Won
-                {% else %}
+                {% if winner == None %}
                 Tie
+                {% else %}
+                {{winner}} Won
                 {% endif %}
                 {% elif playing %}
                 Playing

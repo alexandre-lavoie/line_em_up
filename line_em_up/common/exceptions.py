@@ -1,0 +1,2 @@
+class LEMException(Exception):
+    pass

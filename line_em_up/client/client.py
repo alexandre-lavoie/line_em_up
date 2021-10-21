@@ -1,20 +1,19 @@
-from ..datatypes import Parameters, PlayPacket, MovePacket, ViewPacket, JoinPacket, JoinResponsePacket, AlgorithmType, WinPacket, PlayerType
-from ..datatypes import Config
+from ..common import Parameters, PlayPacket, MovePacket, ViewPacket, JoinPacket, JoinResponsePacket, AlgorithmType, WinPacket, PlayerType
+from .config import ClientConfig
 from .players import Player, HumanPlayer, AIPlayer
-from .heuristics import Heuristic1, Heuristic2
-from .algorithms import MiniMax, AlphaBeta
+from ..ai import MiniMax, AlphaBeta, Heuristic1, Heuristic2
 from abc import ABC, abstractmethod
 from typing import Union
 import socketio
 
 class Client(ABC):
     _parameters: Parameters
-    _config: Config
+    _config: ClientConfig
     _done: bool
     _player: Player
     _player_index: int
 
-    def __init__(self, config: Config):
+    def __init__(self, config: ClientConfig):
         self._config = config
         self._parameters = None
         self._done = False
@@ -35,7 +34,7 @@ class Client(ABC):
         elif self._config.player_type == PlayerType.AI:
             index = self.player_index
             algorithm_name = self._parameters.algorithm
-            heuristic_index = self._parameters.heuristics[index]
+            heuristic_index = self._parameters.heuristic1 if index == 0 else self._parameters.heuristic2
 
             heuristic_types = {
                 1: Heuristic1, 
@@ -77,15 +76,8 @@ class Client(ABC):
         )
 
 class NetworkClient(Client):
-    def __init__(self, config: Config):
-        super().__init__(config)
-
     def run(self):
         sio = socketio.Client()
-
-        def __handle_error(error: str):
-            print(error)
-            sio.disconnect()
 
         @sio.event
         def connect():
@@ -98,7 +90,7 @@ class NetworkClient(Client):
         @sio.event
         def parameters(data):
             if "error" in data:
-                return __handle_error(data["error"])
+                return self.__handle_error(data["error"])
 
             self._parameters = Parameters.from_dict(data)
 
@@ -113,7 +105,7 @@ class NetworkClient(Client):
         @sio.event
         def join(data):
             if "error" in data:
-                return __handle_error(data["error"])
+                return self.__handle_error(data["error"])
 
             packet = JoinResponsePacket.from_dict(data)
 
@@ -128,7 +120,7 @@ class NetworkClient(Client):
         @sio.event
         def play(data):
             if "error" in data:
-                return __handle_error(data["error"])
+                return self.__handle_error(data["error"])
 
             packet = PlayPacket.from_dict(data)
 
@@ -149,6 +141,11 @@ class NetworkClient(Client):
             else:
                 print("I Lose")
 
+            sio.disconnect()
+
+        @sio.event
+        def error(data):
+            print(data["error"])
             sio.disconnect()
 
         sio.connect(self._config.url)
