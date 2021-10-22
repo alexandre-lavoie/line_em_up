@@ -1,0 +1,25 @@
+<html>
+    <head>
+        {% include "head.html" %}
+    </head>
+    <body>
+        {% include "nav.html" %}
+
+        <br/>
+
+        <table class="table table-bordered d-flex justify-content-center">
+            <tr>
+                <th>Player</th>
+                <th>Type</th>
+                <th>Score</th>
+            </tr>
+            {% for player in players %}
+            <tr>
+                <td><a target="_blank" href="/player/{{ player.uuid }}">{{ player.uuid }}</a></td>
+                <td>{% if player.type == "human" %}&#x1f466;{% else %}&#129302;{% endif %}</td>
+                <td>X</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>

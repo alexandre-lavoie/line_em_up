@@ -1,7 +1,7 @@
-from ..common import Parameters, MovePacket, Board, Tile, PlayPacket, LEMException, tile_to_emoji, PlayerType, PlayerID, GameUUID, make_line
+from ..common import Parameters, MovePacket, Board, Tile, PlayPacket, LEMException, tile_to_emoji, PlayerType, PlayerUUID, GameUUID, make_line
+from .player import Player
 import random
 from typing import List, Union, Tuple, Union, Set
-from enum import Enum, auto
 import time
 import uuid
 
@@ -11,13 +11,12 @@ class InvalidException(LEMException):
 class Game:
     _uuid: GameUUID
     _parameters: Parameters
-    _players: List[PlayerID]
-    _player_types: List[PlayerType]
+    _players: List[Player]
     _player_turn: int
     _tiles: Set[Tuple[int, int, Tile]]
     _moves: List[Tuple[int, int]]
     _blocks: Set[Tuple[int, int]]
-    _winner: Union[PlayerID, None]
+    _winner: Union[PlayerUUID, None]
     _complete: bool
     _time: float
 
@@ -30,6 +29,7 @@ class Game:
         self._winner = None
         self._complete = False
         self._time = None
+        self._winner = None
 
         self.__generate_board()
 
@@ -52,16 +52,12 @@ class Game:
         return self._uuid
 
     @property
-    def players(self) -> List[PlayerID]:
+    def players(self) -> List[Player]:
         return self._players
 
     @property
-    def player_types(self) -> List[PlayerType]:
-        return self._player_types
-
-    @property
-    def players_types(self) -> List[Tuple[PlayerID, PlayerType]]:
-        return list(zip(self.players, self.player_types))
+    def player_count(self) -> int:
+        return len(self.players)
 
     @property
     def board(self) -> Board:
@@ -84,28 +80,39 @@ class Game:
         return self._parameters
 
     @property
-    def winner(self) -> Union[PlayerID, None]:
+    def winner(self) -> Union[PlayerUUID, None]:
         return self._winner
+
+    @property
+    def is_private(self) -> bool:
+        return self._parameters.is_private
+
+    @property
+    def is_complete(self) -> bool:
+        return self._complete
+
+    @property
+    def all_players(self) -> bool:
+        return len(self._players) == 2
 
     def reset_time(self):
         self._time = time.time()
 
-    def join(self, player_id: PlayerID, player_type: PlayerType) -> bool:
-        if self.all_players(): return False
+    def join(self, player: Player, player_type: PlayerType) -> bool:
+        if self.all_players: 
+            return False
 
-        self._players.append(player_id)
+        self._players.append(player)
         self._player_types.append(player_type)
 
         return True
 
-    def all_players(self) -> bool:
-        return len(self._players) == 2
+    def get_other_player(self, player: Player) -> str:
+        return self._players[0] if player == self._players[1] else self._players[1]
 
-    def get_other_player(self, player_id: PlayerID) -> str:
-        return self._players[0] if player_id == self._players[1] else self._players[1]
-
-    def __end_game(self, winner: Union[PlayerID, None]):
-        self._winner = winner
+    def __end_game(self, winner: Union[PlayerUUID, None]):
+        if winner:
+            self._winner = winner.uuid
         self._complete = True
 
         return True
@@ -113,23 +120,28 @@ class Game:
     def is_invalid_move(self, position: Tuple[int, int]) -> bool:
         return position in self._moves or position in self._blocks
 
+    def __get_player_index(self, player: Player) -> int:
+        return self._players.index(player)
+
     def play(self, packet: MovePacket):
         play_time = time.time()
 
-        player_id = packet.player_id
-
-        if not player_id in self._players:
+        player = None
+        for iplayer in self._players:
+            if iplayer.uuid == packet.player_uuid:
+                player = iplayer
+                break
+        else:
             raise LEMException("Player not in game")
 
-        if not self.all_players():
+        if not self.all_players:
             raise LEMException("Game not started")
 
-        player_index = self._players.index(player_id)
-        player_type = self._player_types[player_index]
-
-        if player_type == PlayerType.AI and play_time - self._time > self._parameters.max_time:
-            self.__end_game(self.get_other_player(player_id))
+        if player.type == PlayerType.AI and play_time - self._time > self._parameters.max_time:
+            self.__end_game(self.get_other_player(player=player))
             raise InvalidException("Too slow")
+
+        player_index = self.__get_player_index(player)
 
         if not player_index == self._player_turn:
             raise LEMException("Not player turn")
@@ -137,10 +149,10 @@ class Game:
         (x, y) = packet.move
 
         if self.is_invalid_move((x, y)):
-            if player_type == PlayerType.AI:
-                self.__end_game(self.get_other_player(player_id))
+            if player.type == PlayerType.AI:
+                self.__end_game(self.get_other_player(player=player))
                 raise InvalidException("Invalid move")
-            elif player_type == PlayerType.HUMAN:
+            elif player.type == PlayerType.HUMAN:
                 raise LEMException("Invalid move")
 
         self._moves.append((x, y))
@@ -151,13 +163,13 @@ class Game:
         return PlayPacket(
             board=[[tile.value for tile in row] for row in self.board],
             emoji_board=self.pretty_board,
-            player_id=self._players[self._player_turn] if not self._complete else None,
+            player_uuid=self._players[self._player_turn].uuid if not self._complete else None,
             moves=self._moves,
             tiles=list((x, y, tile.value) for x, y, tile in self._tiles),
             blocks=list(self._blocks)
         )
 
-    def is_complete(self) -> bool:
+    def check_complete(self) -> bool:
         if self._complete:
             return True
 
@@ -174,9 +186,9 @@ class Game:
 
                 if all((lx, ly, tile) in self._tiles for lx, ly in line):
                     player_index = 0 if tile == Tile.WHITE else 1
-                    return self.__end_game(self.players[player_index])
+                    return self.__end_game(winner=self.players[player_index])
 
         if len(self._moves) + len(self._blocks) == self.board_size ** 2:
-            return self.__end_game(None)
+            return self.__end_game(winner=None)
 
         return False

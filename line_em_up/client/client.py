@@ -71,7 +71,7 @@ class Client(ABC):
 
     def next_move(self, packet: PlayPacket) -> MovePacket:
         return MovePacket(
-            player_id=self._config.player_id,
+            player_uuid=self._config.player_uuid,
             move=self._player.next_move(packet)
         )
 
@@ -85,7 +85,7 @@ class NetworkClient(Client):
                 game_uuid=self._config.game_uuid
             )
 
-            sio.emit("parameters", {"game_uuid": self._config.game_uuid})
+            sio.emit("parameters", packet.to_dict())
 
         @sio.event
         def parameters(data):
@@ -95,7 +95,7 @@ class NetworkClient(Client):
             self._parameters = Parameters.from_dict(data)
 
             join_packet = JoinPacket(
-                player_id=self._config.player_id,
+                player_uuid=self._config.player_uuid,
                 player_type=self._config.player_type,
                 game_uuid=self._config.game_uuid
             )
@@ -109,7 +109,7 @@ class NetworkClient(Client):
 
             packet = JoinResponsePacket.from_dict(data)
 
-            if packet.player_id == self._config.player_id:
+            if packet.player_uuid == self._config.player_uuid:
                 print("I Joined")
 
                 self._player_index = packet.player_index
@@ -124,7 +124,7 @@ class NetworkClient(Client):
 
             packet = PlayPacket.from_dict(data)
 
-            if packet.player_id == self._config.player_id:
+            if packet.player_uuid == self._config.player_uuid:
                 print("My Turn")
                 sio.emit("play", self.next_move(packet).to_dict())
             else:
@@ -134,9 +134,9 @@ class NetworkClient(Client):
         def win(data):
             packet = WinPacket.from_dict(data)
 
-            if packet.player_id == None:
+            if packet.player_uuid == None:
                 print("Tie")
-            elif packet.player_id == self._config.player_id:
+            elif packet.player_uuid == self._config.player_uuid:
                 print("I Win")
             else:
                 print("I Lose")

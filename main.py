@@ -36,7 +36,7 @@ def main():
 
         client_main(ClientConfig(
             url=os.environ["URL"],
-            player_id=args.id if args.id else str(uuid.uuid4()),
+            player_uuid=args.id if args.id else str(uuid.uuid4()),
             player_type=PlayerType.HUMAN if args.client_type == "human" else PlayerType.AI,
             game_uuid=args.game
         ))

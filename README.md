@@ -25,7 +25,7 @@ To run a client, you must have a server instance running. This can be a publical
 To run a human client:
 
 ```
-python3 main.py client human --id PLAYER_ID --game GAME_UUID
+python3 main.py client human --id PLAYER_UUID --game GAME_UUID
 ```
 
 Once confirmed working, you can implement the actual AI. This can be done by modifying the contents of `/line_em_up/ai` (other folders should remain untouched - please make an issue if you want changes!). 
@@ -33,7 +33,7 @@ Once confirmed working, you can implement the actual AI. This can be done by mod
 To test/run your AI implementation:
 
 ```
-python3 main.py client ai --id PLAYER_ID --game GAME_UUID
+python3 main.py client ai --id PLAYER_UUID --game GAME_UUID
 ```
 
 If you want your AI to run against itself or have multiple AIs in parallel, you can simply start new instances and specify the `game_uuid` you want to play on.

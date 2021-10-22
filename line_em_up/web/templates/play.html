@@ -8,7 +8,7 @@
         </script>
         <script type="text/javascript" charset="utf-8">
             let socket = io();
-            let PLAYER_ID = null;
+            let PLAYER_UUID = null;
 
             socket.on("connect", () => {
                 socket.emit("view", {game_uuid: GAME_UUID});
@@ -17,13 +17,13 @@
             socket.on("error", handle_error);
 
             function joinHandler() {
-                let pid = document.getElementById("player_id");
-                PLAYER_ID = pid.value;
+                let pid = document.getElementById("player_uuid");
+                PLAYER_UUID = pid.value;
                 join(pid.value, GAME_UUID);
             }
 
-            socket.on("join", ({ player_id }) => {
-                if(player_id !== PLAYER_ID) return;
+            socket.on("join", ({ player_uuid }) => {
+                if(player_uuid !== PLAYER_UUID) return;
 
                 set_message("Waiting for Opponent");
 
@@ -41,14 +41,14 @@
                 let tile_id = event.target.id;
                 let split = tile_id.split("_");
                 let move = [parseInt(split[3]), parseInt(split[2])];
-                play(PLAYER_ID, move);
+                play(PLAYER_UUID, move);
             }
 
-            socket.on("play", ({ player_id, emoji_board }) => {
-                if(PLAYER_ID == null) return;
+            socket.on("play", ({ player_uuid, emoji_board }) => {
+                if(PLAYER_UUID == null) return;
 
                 let message = document.getElementById("message");
-                if(player_id === PLAYER_ID) {
+                if(player_uuid === PLAYER_UUID) {
                     set_message("Your Turn");
                     addTileClick(playHandler);
                 } else {
@@ -80,8 +80,8 @@
 
         <div id="join_container" class="mx-4">
             <div class="card p-4">
-                <label for="player_id">Player Id:</label>
-                <input id="player_id" class="form-control" />
+                <label for="player_uuid">Player Id:</label>
+                <input id="player_uuid" class="form-control" />
                 <br/>
                 <button class="btn btn-primary" onclick="joinHandler()">Join</button>
             </div>

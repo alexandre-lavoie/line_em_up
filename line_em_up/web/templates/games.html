@@ -1,0 +1,44 @@
+<html>
+    <head>
+        {% include "head.html" %}
+    </head>
+    <body>
+        {% include "nav.html" %}
+
+        <br/>
+
+        <table id="active_games" class="table table-bordered d-flex justify-content-center">
+            <tr>
+                <th>Active Games</th>
+                <th>Players</th>
+            </tr>
+            {% for game in open_games %}
+            <tr>
+                <td><a target="_blank" href="/view/{{game.uuid}}">{{game.uuid}}</a></td>
+                <td>{{game.player_count}}/2</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <br/>
+
+        <table id="completed_games" class="table table-bordered d-flex justify-content-center">
+            <tr>
+                <th>Completed Games</th>
+                {% for i in range(1, 3) %}
+                <th>Player {{ i }}</th>
+                <th>Type {{ i }}</th>
+                {% endfor %}
+            </tr>
+            {% for game in completed_games %}
+            <tr>
+                <td><a target="_blank" href="/view/{{game.uuid}}">{{game.uuid}}</a></td>
+                {% for player in game.players %}
+                <td><a href="/player/{{ player.uuid }}">{{ player.uuid }}</a></td>
+                <td>{% if player.type == "human" %}&#x1f466;{% else %}&#129302;{% endif %}{% if game.winner == player.uuid %}&#x1f451;{% endif %}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>

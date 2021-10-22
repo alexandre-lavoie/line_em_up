@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
-from .types import AlgorithmType, PlayerID, GameUUID, PlayerType, Board, Move, Tile
+from .types import AlgorithmType, PlayerUUID, GameUUID, PlayerType, Board, Move, Tile
 from typing import List, Tuple, Union, Set
 
 @dataclass_json
@@ -15,7 +15,7 @@ class Parameters:
     algorithm: AlgorithmType
     heuristic1: int
     heuristic2: int
-    is_private: bool = True
+    is_private: bool = False
 
     def __post_init__(self):
         self.board_size = int(self.board_size)
@@ -50,12 +50,12 @@ class Parameters:
         if not self.heuristic2 in [1, 2]:
             raise TypeError("Invalid heuristic2.")
 
-        self.is_private = bool(self.is_private)
+        self.is_private = self.is_private == "on"
 
 @dataclass_json
 @dataclass
 class PlayPacket:
-    player_id: Union[PlayerID, None]
+    player_uuid: Union[PlayerUUID, None]
     board: Board
     emoji_board: List[List[str]]
     moves: List[Tuple[int, int]]
@@ -70,7 +70,7 @@ class ErrorPacket:
 @dataclass_json
 @dataclass
 class MovePacket:
-    player_id: PlayerID
+    player_uuid: PlayerUUID
     move: Move
 
 @dataclass_json
@@ -81,19 +81,19 @@ class ParametersPacket:
 @dataclass_json
 @dataclass
 class WinPacket:
-    player_id: Union[PlayerID, None]
+    player_uuid: Union[PlayerUUID, None]
 
 @dataclass_json
 @dataclass
 class JoinPacket:
     game_uuid: GameUUID
-    player_id: PlayerID
+    player_uuid: PlayerUUID
     player_type: PlayerType
 
 @dataclass_json
 @dataclass
 class JoinResponsePacket:
-    player_id: PlayerID
+    player_uuid: PlayerUUID
     player_index: int
     player_type: PlayerType
 

@@ -1,0 +1,30 @@
+<html>
+    <head>
+        {% include "head.html" %}
+    </head>
+    <body>
+        {% include "nav.html" %}
+
+        <br/>
+
+        <table class="table table-bordered d-flex justify-content-center">
+            <tr><th>UUID</th><td>{{ player.uuid }}</td></tr>
+            <tr><th>Type</th><td>{% if player.type == "human" %}&#x1f466;{% else %}&#129302;{% endif %}</td></tr>
+        </table>
+
+        <br/>
+
+        <table class="table table-bordered d-flex justify-content-center">
+            <tr>
+                <th>Game</th>
+                <th>State</th>
+            </tr>
+            {% for game in games %}
+            <tr>
+                <td><a target="_blank" href="/view/{{ game.uuid }}">{{ game.uuid }}</a></td>
+                <td>{% if game.is_complete %}{% if game.winner == player.uuid %}&#x1f451;{% elif game.winner == None %}&#x1f454;{% else %}&#x1f948;{% endif %}{% else %}&#10067;{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>

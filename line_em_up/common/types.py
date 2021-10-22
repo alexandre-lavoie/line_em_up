@@ -1,5 +1,7 @@
 from enum import Enum
 from typing import List, Tuple
+from dataclasses import dataclass
+from dataclasses_json import dataclass_json
 
 class AlgorithmType(str, Enum):
     MINIMAX = "minimax"
@@ -18,4 +20,4 @@ class Tile(Enum):
 Board = List[List[Tile]]
 Move = Tuple[int, int]
 GameUUID = str
-PlayerID = str
+PlayerUUID = str
