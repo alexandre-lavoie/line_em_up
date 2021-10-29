@@ -79,10 +79,25 @@ class PlayPacket:
 class ErrorPacket:
     error: str
 
-@dataclass_json
 @dataclass
 class MovePacket:
     move: Move
+
+    def to_dict(self):
+        print(self)
+
+        d = vars(self)
+        (x, y) = d['move']
+        d['move'] = (x, y)
+
+        return d
+
+    @classmethod
+    def from_dict(cls, d: any):
+        (x, y) = d['move']
+        d['move'] = (x, y)
+
+        return MovePacket(**d)
 
 @dataclass_json
 @dataclass
