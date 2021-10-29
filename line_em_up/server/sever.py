@@ -7,7 +7,7 @@ import os.path
 from typing import Dict, List
 import random
 
-from ..common import Parameters, MovePacket, tile_to_emoji, ErrorPacket, WinPacket, JoinResponsePacket, JoinPacket, ParametersPacket, ViewPacket, LEMException, Tile, GameUUID, PlayerUUID, PlayerType
+from ..common import Parameters, MovePacket, tile_to_emoji, ErrorPacket, WinPacket, JoinResponsePacket, JoinPacket, ParametersPacket, ViewPacket, LEMException, Tile, GameUUID, PlayerUUID, PlayerType, Emojis
 from .config import ServerConfig
 from .sql import Base
 from .handler import ServerHandler
@@ -70,7 +70,8 @@ class Server:
                     raise LEMException("Game not found.")
 
                 return render_template('view.html',
-                    game=game
+                    game=game,
+                    emojis=Emojis
                 )
             except LEMException:
                 return redirect('/')
@@ -110,7 +111,8 @@ class Server:
         def games_list():
             return render_template("games.html", 
                 open_games=request.handler.get_open_games(), 
-                completed_games=request.handler.get_completed_games()
+                completed_games=request.handler.get_completed_games(),
+                emojis=Emojis
             )
 
         @app.route('/player/<player_id>', methods=['GET'])
@@ -119,7 +121,8 @@ class Server:
                 player = request.handler.get_player(player_id=player_id)
 
                 return render_template("player.html",
-                    player=player
+                    player=player,
+                    emojis=Emojis
                 )
             except:
                 return redirect("/")

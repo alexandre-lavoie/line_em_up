@@ -26,7 +26,7 @@
 
                 let cell1 = row.insertCell(-1);
                 cell1.id = `player_type_${player_id}`;
-                cell1.innerHTML = (player_type == "human") ? "&#x1f466;" : "&#129302;";
+                cell1.innerHTML = (player_type == "human") ? "{{ emojis['HUMAN']|safe }}" : "{{ emojis['AI']|safe }}";
 
                 let cell2 = row.insertCell(-1);
                 cell2.id = `player_session_${player_id}`;
@@ -38,7 +38,7 @@
                     set_message(`${player_name} Won`);
 
                     let player_type = document.getElementById(`player_type_${player_id}`);
-                    player_type.innerHTML = player_type.innerHTML + "&#x1f451;";
+                    player_type.innerHTML = player_type.innerHTML + "{{ emojis['WIN']|safe }}";
                 } else {
                     set_message("Tie");
                 }
@@ -90,7 +90,7 @@
             {% for session in game.sessions %}
             <tr>
                 <td id="player_id_{{ session.player.id }}"><a href="/player/{{ session.player.id }}">{{ session.player.name }}</a></td>
-                <td id="player_type_{{ session.player.id }}">{% if session.player_type == "human" %}&#x1f466;{% else %}&#129302;{% endif %}{% if session.game.tile_winner == session.tile %}&#x1f451;{% endif %}</td>
+                <td id="player_type_{{ session.player.id }}">{% if session.player_type == "human" %}{{ emojis['HUMAN']|safe }}{% else %}{{ emojis['AI']|safe }}{% endif %}{% if session.winner %}{{ emojis['WIN']|safe }}{% endif %}</td>
                 <td id="player_session_{{ session.player.id }}">{{ session.socket_id }}</td>
             </tr>
             {% endfor %}

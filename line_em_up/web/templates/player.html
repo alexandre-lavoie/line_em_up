@@ -24,8 +24,8 @@
             {% for session in player.unique_sessions %}
             <tr>
                 <td><a target="_blank" href="/view/{{ session.game.id }}">{{ session.game.id }}</a></td>
-                <td>{% if session.player_type == "human" %}&#x1f466;{% else %}&#129302;{% endif %}</td>
-                <td>{% if session.game.complete %}{% if session.winner %}&#x1f451;{% elif session.game.winner == None %}&#x1f454;{% else %}&#x1f948;{% endif %}{% else %}&#10067;{% endif %}</td>
+                <td>{% if session.player_type == "human" %}{{ emojis['HUMAN']|safe }}{% else %}{{ emojis['AI']|safe }}{% endif %}</td>
+                <td>{% if session.game.complete %}{% if session.winner %}{{ emojis['WIN']|safe }}{% elif session.game.winner == None %}{{ emojis['TIE']|safe }}{% else %}{{ emojis['LOSE']|safe }}{% endif %}{% else %}{{ emojis['UNKNOWN']|safe }}{% endif %}</td>
             </tr>
             {% endfor %}
         </table>
