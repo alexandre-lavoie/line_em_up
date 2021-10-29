@@ -11,7 +11,7 @@ def parse_args():
 
     client_parser.add_argument("client_type", choices=("ai", "human"), help="Client type to run as.")
     client_parser.add_argument("--game", help="Game UUID to connect to.", required=True)
-    client_parser.add_argument("--id", help="Player id to connect with.")
+    client_parser.add_argument("--name", help="Player name to connect with.")
 
     server_parser = type_parser.add_parser("server")
 
@@ -36,9 +36,9 @@ def main():
 
         client_main(ClientConfig(
             url=os.environ["URL"],
-            player_uuid=args.id if args.id else str(uuid.uuid4()),
+            player_name=args.name if args.name else str(uuid.uuid4()),
             player_type=PlayerType.HUMAN if args.client_type == "human" else PlayerType.AI,
-            game_uuid=args.game
+            game_id=args.game
         ))
 
 if __name__ == "__main__":

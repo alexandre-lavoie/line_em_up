@@ -1,4 +1,4 @@
-from ..common import Parameters, PlayPacket, MovePacket, ViewPacket, JoinPacket, JoinResponsePacket, AlgorithmType, WinPacket, PlayerType
+from ..common import Parameters, PlayPacket, MovePacket, ViewPacket, JoinPacket, JoinResponsePacket, AlgorithmType, WinPacket, PlayerType, Tile, HeuristicType
 from .config import ClientConfig
 from .players import Player, HumanPlayer, AIPlayer
 from ..ai import MiniMax, AlphaBeta, Heuristic1, Heuristic2
@@ -11,14 +11,14 @@ class Client(ABC):
     _config: ClientConfig
     _done: bool
     _player: Player
-    _player_index: int
+    _tile: Tile
 
     def __init__(self, config: ClientConfig):
         self._config = config
         self._parameters = None
         self._done = False
         self._player = None
-        self._player_index = None
+        self._tile = Tile.EMPTY
 
     @property
     def player_index(self) -> int:
@@ -32,17 +32,17 @@ class Client(ABC):
         if self._config.player_type == PlayerType.HUMAN:
             self._player = HumanPlayer()
         elif self._config.player_type == PlayerType.AI:
-            index = self.player_index
+            tile = self._tile
             algorithm_name = self._parameters.algorithm
-            heuristic_index = self._parameters.heuristic1 if index == 0 else self._parameters.heuristic2
+            heuristic_index = self._parameters.heuristic1 if tile == Tile.WHITE else self._parameters.heuristic2
 
             heuristic_types = {
-                1: Heuristic1, 
-                2: Heuristic2
+                HeuristicType.ONE: Heuristic1, 
+                HeuristicType.TWO: Heuristic2
             }
             if heuristic_index in heuristic_types:
                 heuristic = heuristic_types[heuristic_index](
-                    player_index=index, 
+                    tile=tile, 
                     parameters=self._parameters
                 )
             else:
@@ -71,7 +71,6 @@ class Client(ABC):
 
     def next_move(self, packet: PlayPacket) -> MovePacket:
         return MovePacket(
-            player_uuid=self._config.player_uuid,
             move=self._player.next_move(packet)
         )
 
@@ -81,50 +80,45 @@ class NetworkClient(Client):
 
         @sio.event
         def connect():
+            print("Connected")
+
             packet = ViewPacket(
-                game_uuid=self._config.game_uuid
+                game_id=self._config.game_id
             )
 
             sio.emit("parameters", packet.to_dict())
 
         @sio.event
         def parameters(data):
-            if "error" in data:
-                return self.__handle_error(data["error"])
+            print("Parameters")
 
             self._parameters = Parameters.from_dict(data)
 
             join_packet = JoinPacket(
-                player_uuid=self._config.player_uuid,
+                player_name=self._config.player_name,
                 player_type=self._config.player_type,
-                game_uuid=self._config.game_uuid
+                game_id=self._config.game_id
             )
 
             sio.emit("join", join_packet.to_dict())
 
         @sio.event
         def join(data):
-            if "error" in data:
-                return self.__handle_error(data["error"])
-
             packet = JoinResponsePacket.from_dict(data)
 
-            if packet.player_uuid == self._config.player_uuid:
+            if packet.player_name == self._config.player_name:
                 print("I Joined")
 
-                self._player_index = packet.player_index
+                self._tile = packet.tile
                 self.init_player()
             else:
                 print("Opponent Joined")
 
         @sio.event
         def play(data):
-            if "error" in data:
-                return self.__handle_error(data["error"])
-
             packet = PlayPacket.from_dict(data)
 
-            if packet.player_uuid == self._config.player_uuid:
+            if packet.tile == self._tile:
                 print("My Turn")
                 sio.emit("play", self.next_move(packet).to_dict())
             else:
@@ -134,9 +128,9 @@ class NetworkClient(Client):
         def win(data):
             packet = WinPacket.from_dict(data)
 
-            if packet.player_uuid == None:
+            if packet.player_name == None:
                 print("Tie")
-            elif packet.player_uuid == self._config.player_uuid:
+            elif packet.player_name == self._config.player_name:
                 print("I Win")
             else:
                 print("I Lose")

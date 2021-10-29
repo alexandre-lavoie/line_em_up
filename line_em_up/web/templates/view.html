@@ -4,36 +4,40 @@
 
         <script type="text/javascript" src="/game.js"></script>
         <script type="text/javascript">
-            const GAME_UUID = "{{ game_uuid }}";
+            const GAME_ID = "{{ game.id }}";
         </script>
         <script type="text/javascript" charset="utf-8">
             let socket = io();
 
             socket.on("connect", () => {
-                socket.emit("view", {game_uuid: GAME_UUID});
+                socket.emit("view", { game_id: GAME_ID });
             });
 
             socket.on("error", handle_error);
 
-            socket.on("join", ({ player_uuid, player_type }) => {
-                set_message(`${player_uuid} Joined`)
+            socket.on("join", ({ player_id, player_name, player_type, socket_id }) => {
+                set_message(`${player_name} Joined`)
 
                 let table = document.getElementById("players");
                 let row = table.insertRow(-1);
                 let cell0 = row.insertCell(-1);
-                cell0.id = `player_uuid_${player_uuid}`;
-                cell0.innerHTML = `<a href="/player/${player_uuid}">${player_uuid}</a>`;
+                cell0.id = `player_id_${player_id}`;
+                cell0.innerHTML = `<a href="/player/${player_id}">${player_name}</a>`;
 
                 let cell1 = row.insertCell(-1);
-                cell1.id = `player_type_${player_uuid}`;
+                cell1.id = `player_type_${player_id}`;
                 cell1.innerHTML = (player_type == "human") ? "&#x1f466;" : "&#129302;";
+
+                let cell2 = row.insertCell(-1);
+                cell2.id = `player_session_${player_id}`;
+                cell2.innerText = `${socket_id}`;
             });
 
-            socket.on("win", ({ player_uuid }) => {
-                if(player_uuid !== null) {
-                    set_message(`${player_uuid} Won`);
+            socket.on("win", ({ player_id, player_name }) => {
+                if(player_name !== null) {
+                    set_message(`${player_name} Won`);
 
-                    let player_type = document.getElementById(`player_type_${player_uuid}`);
+                    let player_type = document.getElementById(`player_type_${player_id}`);
                     player_type.innerHTML = player_type.innerHTML + "&#x1f451;";
                 } else {
                     set_message("Tie");
@@ -42,8 +46,8 @@
                 document.getElementById("join_container").remove();
             });
 
-            socket.on("play", ({ player_uuid, emoji_board }) => {
-                if(player_uuid != null) {
+            socket.on("play", ({ tile, emoji_board }) => {
+                if(tile != null) {
                     set_message("Playing");
                 }
 
@@ -58,13 +62,13 @@
 
         <div class="d-flex justify-content-center">
             <div id="message" class="alert alert-dark text-center">
-                {% if is_complete %}
-                {% if winner == None %}
+                {% if game.complete %}
+                {% if game.winner == None %}
                 Tie
                 {% else %}
-                {{winner}} Won
+                {{ game.winner.name }} Won
                 {% endif %}
-                {% elif playing %}
+                {% elif game.started %}
                 Playing
                 {% else %}
                 Waiting for Players
@@ -73,6 +77,7 @@
         </div>
 
         <br/>
+        {% set board=game.pretty_board %}
         {% include "board.html" %}
         <br/>
 
@@ -80,19 +85,21 @@
             <tr>
                 <th>Player</th>
                 <th>Type</th>
+                <th>Session</th>
             </tr>
-            {% for player in players %}
+            {% for session in game.sessions %}
             <tr>
-                <td id="player_uuid_{{ player.uuid }}"><a href="/player/{{ player.uuid }}">{{ player.uuid }}</a></td>
-                <td id="player_type_{{ player.uuid }}">{% if player.type == "human" %}&#x1f466;{% else %}&#129302;{% endif %}{% if winner == player.uuid %}&#x1f451;{% endif %}</td>
+                <td id="player_id_{{ session.player.id }}"><a href="/player/{{ session.player.id }}">{{ session.player.name }}</a></td>
+                <td id="player_type_{{ session.player.id }}">{% if session.player_type == "human" %}&#x1f466;{% else %}&#129302;{% endif %}{% if session.game.tile_winner == session.tile %}&#x1f451;{% endif %}</td>
+                <td id="player_session_{{ session.player.id }}">{{ session.socket_id }}</td>
             </tr>
             {% endfor %}
         </table>
 
         <br />
-        {% if not is_complete %}
+        {% if not game.complete %}
         <div id="join_container" class="d-flex justify-content-center">
-            <a target="_blank" href="/play/{{ game_uuid }}"><button class="btn btn-primary">Join</button></a>
+            <a target="_blank" href="/play/{{ game.id }}"><button class="btn btn-primary">Join</button></a>
         </div>
         {% endif %}
     </body>

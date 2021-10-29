@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
-from .types import AlgorithmType, PlayerUUID, GameUUID, PlayerType, Board, Move, Tile
+from .types import AlgorithmType, PlayerUUID, GameUUID, PlayerType, Move, Tile, HeuristicType
 from typing import List, Tuple, Union, Set
 
 @dataclass_json
@@ -9,13 +9,13 @@ class Parameters:
     board_size: int
     block_count: int
     line_up_size: int
-    player_depth1: int
-    player_depth2: int
+    depth1: int
+    depth2: int
     max_time: float
     algorithm: AlgorithmType
-    heuristic1: int
-    heuristic2: int
-    is_private: bool = False
+    heuristic1: HeuristicType
+    heuristic2: HeuristicType
+    listed: bool = False
 
     def __post_init__(self):
         self.board_size = int(self.board_size)
@@ -30,37 +30,47 @@ class Parameters:
         if self.line_up_size < 0 or self.line_up_size > self.board_size:
             raise TypeError("Invalid line up size.")
 
-        self.player_depth1 = int(self.player_depth1)
-        if self.player_depth1 < 0:
+        self.depth1 = int(self.depth1)
+        if self.depth1 < 0:
             raise TypeError("Invalid player1 depth.")
 
-        self.player_depth2 = int(self.player_depth2)
-        if self.player_depth2 < 0:
+        self.depth2 = int(self.depth2)
+        if self.depth2 < 0:
             raise TypeError("Invalid player2 depth.")
 
         self.max_time = float(self.max_time)
         if self.max_time < 0:
             raise TypeError("Invalid max time.")
 
-        self.heuristic1 = int(self.heuristic1)
-        if not self.heuristic1 in [1, 2]:
-            raise TypeError("Invalid heuristic1.")
+        self.algorithm = AlgorithmType(self.algorithm)
+        self.heuristic1 = HeuristicType(self.heuristic1)
+        self.heuristic2 = HeuristicType(self.heuristic2)
 
-        self.heuristic2 = int(self.heuristic2)
-        if not self.heuristic2 in [1, 2]:
-            raise TypeError("Invalid heuristic2.")
+        self.listed = self.listed == "on"
 
-        self.is_private = self.is_private == "on"
-
-@dataclass_json
 @dataclass
 class PlayPacket:
-    player_uuid: Union[PlayerUUID, None]
-    board: Board
+    tile: Tile
+    board: List[List[Tile]]
     emoji_board: List[List[str]]
-    moves: List[Tuple[int, int]]
-    tiles: Set[Tuple[int, int, Tile]]
-    blocks: Set[Tuple[int, int]]
+    moves: List[Tuple[int, int, Tile]]
+    blocks: List[Tuple[int, int]]
+
+    def to_dict(self):
+        d = vars(self)
+        d['tile'] = d['tile'].value
+        d['board'] = [[tile.value for tile in row] for row in d['board']]
+        d['moves'] = [(x, y, tile.value) for x, y, tile in d['moves']]
+
+        return d
+
+    @classmethod
+    def from_dict(cls, d: any):
+        d['tile'] = Tile(d['tile'])
+        d['board'] = [[Tile(tile) for tile in row] for row in d['board']]
+        d['moves'] = [(x, y, Tile(tile)) for x, y, tile in d['moves']]
+
+        return PlayPacket(**d)
 
 @dataclass_json
 @dataclass
@@ -70,34 +80,72 @@ class ErrorPacket:
 @dataclass_json
 @dataclass
 class MovePacket:
-    player_uuid: PlayerUUID
     move: Move
 
 @dataclass_json
 @dataclass
 class ParametersPacket:
-    game_uuid: GameUUID
+    game_id: GameUUID
 
-@dataclass_json
 @dataclass
 class WinPacket:
-    player_uuid: Union[PlayerUUID, None]
+    tile: Tile
+    player_id: PlayerUUID
+    player_name: str
 
-@dataclass_json
+    def to_dict(self):
+        d = vars(self)
+        d['tile'] = d['tile'].value
+
+        return d
+
+    @classmethod
+    def from_dict(cls, d: any):
+        d['tile'] = Tile(d['tile'])
+
+        return WinPacket(**d)
+
 @dataclass
 class JoinPacket:
-    game_uuid: GameUUID
-    player_uuid: PlayerUUID
+    game_id: GameUUID
+    player_name: str
     player_type: PlayerType
 
-@dataclass_json
+    def to_dict(self):
+        d = vars(self)
+        d['player_type'] = d['player_type'].value
+
+        return d
+
+    @classmethod
+    def from_dict(cls, d: any):
+        d['player_type'] = PlayerType(d['player_type'])
+
+        return JoinPacket(**d)
+
 @dataclass
 class JoinResponsePacket:
-    player_uuid: PlayerUUID
-    player_index: int
+    socket_id: str
+    player_id: PlayerUUID
+    player_name: str
     player_type: PlayerType
+    tile: Tile
+
+    def to_dict(self):
+        d = vars(self)
+        d['player_type'] = d['player_type'].value
+        d['tile'] = d['tile'].value
+
+        return d
+
+    @classmethod
+    def from_dict(cls, d: any):
+        d['player_type'] = PlayerType(d['player_type'])
+        d['tile'] = Tile(d['tile'])
+
+        return JoinResponsePacket(**d)
 
 @dataclass_json
 @dataclass
 class ViewPacket:
-    game_uuid: GameUUID
+    game_id: GameUUID

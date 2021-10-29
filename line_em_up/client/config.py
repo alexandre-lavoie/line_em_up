@@ -6,6 +6,6 @@ from ..common import PlayerUUID, PlayerType, GameUUID
 @dataclass
 class ClientConfig:
     url: str
-    player_uuid: PlayerUUID
+    player_name: PlayerUUID
     player_type: PlayerType
-    game_uuid: GameUUID
+    game_id: GameUUID

@@ -1,24 +1,37 @@
 from abc import ABC, abstractmethod
-from ..common import PlayPacket, Move, Parameters, Board
+from ..common import PlayPacket, Move, Parameters, Board, Tile
 
 class Heuristic(ABC):
-    _player_index: int
-    _parameters: Parameters
+    __tile: Tile
+    __parameters: Parameters
 
-    def __init__(self, player_index: int, parameters: Parameters):
-        self._player_index = player_index
-        self._parameters = parameters
+    def __init__(self, tile: Tile, parameters: Parameters):
+        self.__tile = tile
+        self.__parameters = parameters
 
-    @property
-    def player_index(self) -> int:
-        return self._player_index
-
-    @property
-    def parameters(self) -> Parameters:
-        return self._parameters
-
+    @abstractmethod
     def get_score(self, data: any) -> float:
         return 0
+
+    @property
+    def max_depth(self) -> int:
+        return self.__parameters.depth1 if self.__tile == Tile.WHITE else self.__parameters.depth2
+
+    @property
+    def block_count(self) -> int:
+        return self.__parameters.block_count
+
+    @property
+    def max_time(self) -> int:
+        return self.__parameters.max_time
+
+    @property
+    def line_up_size(self) -> int:
+        return self.__parameters.line_up_size
+
+    @property
+    def board_size(self) -> int:
+        return self.__parameters.board_size
 
 class Algorithm(ABC):
     __heuristic: Heuristic
@@ -26,29 +39,29 @@ class Algorithm(ABC):
     def __init__(self, heuristic: Heuristic):
         self.__heuristic = heuristic
 
-    @property
-    def player_index(self) -> int:
-        return self.__heuristic.player_index
+    @abstractmethod
+    def next_move(self, packet: PlayPacket) -> Move:
+        return (0, 0)
 
     def get_score(self, data: any) -> float:
         return self.__heuristic.get_score(data)
 
     @property
     def max_depth(self) -> int:
-        return self.__heuristic.parameters.player_depth1 if self.player_index == 0 else self.__heuristic.parameters.player_depth2
+        return self.__heuristic.max_depth
+
+    @property
+    def block_count(self) -> int:
+        return self.__heuristic.block_count
 
     @property
     def max_time(self) -> float:
-        return self.__heuristic.parameters.max_time
+        return self.__heuristic.max_time
 
     @property
     def line_up_size(self) -> int:
-        return self.__heuristic.parameters.line_up_size
+        return self.__heuristic.line_up_size
 
     @property
     def board_size(self) -> int:
-        return self.__heuristic.parameters.board_size
-
-    @abstractmethod
-    def next_move(self, packet: PlayPacket) -> Move:
-        return (0, 0)
+        return self.__heuristic.board_size

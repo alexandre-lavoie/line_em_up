@@ -7,6 +7,10 @@ class AlgorithmType(str, Enum):
     MINIMAX = "minimax"
     ALPHABETA = "alphabeta"
 
+class HeuristicType(str, Enum):
+    ONE = 1
+    TWO = 2
+
 class PlayerType(str, Enum):
     HUMAN = "human"
     AI = "ai"

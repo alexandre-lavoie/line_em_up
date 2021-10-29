@@ -15,21 +15,21 @@ function set_message(text) {
 }
 
 function handle_error({ error }) {
-    if(error === "No game with game_uuid.") {
+    if(error === "No game with game_id.") {
         window.location.replace("/");
     } else if(error === "Could not join game.") {
-        PLAYER_UUID = null;
+        PLAYER_NAME = null;
     }
 
     set_message(error);
 }
 
-function join(player_uuid, game_uuid) {
-    socket.emit("join", {player_uuid, player_type: "human", game_uuid});
+function join(player_name, game_id) {
+    socket.emit("join", { player_name, player_type: "human", game_id });
 }
 
-function play(player_uuid, move) {
-    socket.emit("play", {player_uuid, move});
+function play(move) {
+    socket.emit("play", { move });
 }
 
 function addTileClick(handler) {

@@ -1,29 +1,34 @@
 <html>
     <head>
         {% include "head.html" %}
-        
+
         <script type="text/javascript" src="/game.js"></script>
         <script type="text/javascript" charset="utf-8">
-            const GAME_UUID = "{{ game_uuid }}";
+            const GAME_ID = "{{ game.id }}";
         </script>
         <script type="text/javascript" charset="utf-8">
             let socket = io();
-            let PLAYER_UUID = null;
+            let PLAYER_NAME = null;
+            let PLAYER_TILE = null;
 
             socket.on("connect", () => {
-                socket.emit("view", {game_uuid: GAME_UUID});
+                socket.emit("view", { game_id: GAME_ID });
             });
 
             socket.on("error", handle_error);
 
             function joinHandler() {
-                let pid = document.getElementById("player_uuid");
-                PLAYER_UUID = pid.value;
-                join(pid.value, GAME_UUID);
+                let pid = document.getElementById("player_name");
+                PLAYER_NAME = pid.value;
+                join(pid.value, GAME_ID);
             }
 
-            socket.on("join", ({ player_uuid }) => {
-                if(player_uuid !== PLAYER_UUID) return;
+            socket.on("join", ({ player_name, tile }) => {
+                if(player_name === PLAYER_NAME) {
+                    PLAYER_TILE = tile;
+                }
+
+                if(player_name !== PLAYER_NAME) return;
 
                 set_message("Waiting for Opponent");
 
@@ -34,21 +39,21 @@
             });
 
             socket.on("win", data => {
-                window.location.replace(`/view/${GAME_UUID}`);
+                window.location.replace(`/view/${GAME_ID}`);
             });
 
             function playHandler(event) {
                 let tile_id = event.target.id;
                 let split = tile_id.split("_");
                 let move = [parseInt(split[3]), parseInt(split[2])];
-                play(PLAYER_UUID, move);
+                play(move);
             }
 
-            socket.on("play", ({ player_uuid, emoji_board }) => {
-                if(PLAYER_UUID == null) return;
+            socket.on("play", ({ tile, emoji_board }) => {
+                if(PLAYER_NAME == null) return;
 
                 let message = document.getElementById("message");
-                if(player_uuid === PLAYER_UUID) {
+                if(tile === PLAYER_TILE) {
                     set_message("Your Turn");
                     addTileClick(playHandler);
                 } else {
@@ -73,6 +78,7 @@
         
         <div id="board_container" class="d-none">
         <br/>
+        {% set board = game.pretty_board %}
         {% include "board.html" %}
         <br/>
         </div>
@@ -80,8 +86,8 @@
 
         <div id="join_container" class="mx-4">
             <div class="card p-4">
-                <label for="player_uuid">Player Id:</label>
-                <input id="player_uuid" class="form-control" />
+                <label for="player_name">Player Name:</label>
+                <input id="player_name" class="form-control" />
                 <br/>
                 <button class="btn btn-primary" onclick="joinHandler()">Join</button>
             </div>
@@ -90,8 +96,8 @@
             <p class="text-center">OR</p>
 
             <div class="card p-4">
-                <pre class="m-0">python3 main.py client ai --game {{game_uuid}}</pre>
-                <pre class="m-0">python3 main.py client human --game {{game_uuid}}</pre>
+                <pre class="m-0">python3 main.py client ai --game {{game.id}}</pre>
+                <pre class="m-0">python3 main.py client human --game {{game.id}}</pre>
             </div>
         </div>
     </body>

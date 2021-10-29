@@ -1,83 +1,22 @@
 from flask import Flask, render_template, request, redirect
 from flask_socketio import SocketIO, emit, join_room
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+from sqlalchemy import create_engine
 import os.path
-from ..common import Parameters, MovePacket, tile_to_emoji, ErrorPacket, WinPacket, JoinResponsePacket, JoinPacket, ParametersPacket, ViewPacket, LEMException, Tile, GameUUID, PlayerUUID, PlayerType
-from .game import Game, InvalidException
-from .config import ServerConfig
-from .player import Player, PlayerSession
 from typing import Dict, List
 import random
 
+from ..common import Parameters, MovePacket, tile_to_emoji, ErrorPacket, WinPacket, JoinResponsePacket, JoinPacket, ParametersPacket, ViewPacket, LEMException, Tile, GameUUID, PlayerUUID, PlayerType
+from .config import ServerConfig
+from .sql import Base
+from .handler import ServerHandler
+
 class Server:
     _config: ServerConfig
-    __games: Dict[GameUUID, Game]
-    __players: Dict[PlayerUUID, Player]
 
     def __init__(self, config: ServerConfig):
         self._config=config
-        self.__games={}
-        self.__players={}
-
-    def __start_game(self, game: Game):
-        self.__games[game.uuid]=game
-
-    def __end_game(self, game: Game):
-        for player in game.players:
-            player.close_session(
-                game_uuid=game.uuid
-            )
-
-    def __get_player(self, player_uuid: str) -> Player:
-        if not player_uuid in self.__players:
-            raise LEMException("No player with id.")
-
-        return self.__players[player_uuid]
-
-    def __join_game(self, player: Player, game: Game):
-        joined = game.join(
-            player=player
-        )
-
-        if not joined:
-            raise LEMException("Could not join game.")
-
-    def __get_game(self, uuid: GameUUID) -> Game:
-        if not uuid in self.__games:
-            raise LEMException("No game with game_uuid.")
-
-        return self.__games[uuid]
-
-    def __get_games(self) -> List[Game]:
-        return self.__games.values()
-
-    def __get_open_games(self) -> List[Game]:
-        return [game for game in self.__get_games() if not game.is_private and not game.is_complete]
-
-    def __get_completed_games(self) -> List[Game]:
-        return [game for game in self.__get_games() if game.is_complete]
-
-    def __make_player(self, uuid: PlayerUUID, type: PlayerType) -> Player:
-        if uuid in self.__players:
-            player = self.__players[uuid] 
-
-            if not player.type == type:
-                raise LEMException("Player types do not match.") 
-
-            return player
-
-        player = Player(
-            uuid=uuid,
-            type=type
-        )
-        self.__players[uuid] = player
-
-        return player
-
-    def __get_player(self, uuid: PlayerUUID) -> Player:
-        if not uuid in self.__players:
-            raise LEMException("No player with uuid.")
-
-        return self.__players[uuid]
 
     def __random_board(self, board_size: int) -> List[List[str]]:
         return [[tile_to_emoji(tile) for tile in random.choices(list(Tile), k=board_size)] for _ in range(board_size)]
@@ -88,20 +27,22 @@ class Server:
         except Exception as err:
             raise LEMException(str(err))
 
-    def __handle_win(self, game: Game):
-        packet = WinPacket(
-            player_uuid=game.winner
-        )
-        emit("win", packet.to_dict(), to=game.uuid)
-
-        self.__end_game(game)
-
-    def __handle_play(self, game: Game):
-        packet = game.next_packet()
-        game.reset_time()
-        emit("play", packet.to_dict(), to=game.uuid)
-
     def run(self):
+        if self._config.debug:
+            engine = create_engine(
+                'sqlite://',
+                connect_args={"check_same_thread": False},
+                poolclass=StaticPool,
+                # echo=True
+            )
+        else:
+            engine = create_engine(
+                f'sqlite:///{os.path.abspath("./data.db")}',
+                connect_args={"check_same_thread": False},
+            )
+        Base.metadata.create_all(engine)
+        SessionMaker = sessionmaker(bind=engine)
+
         app = Flask(
             __name__,
             static_url_path="",
@@ -110,41 +51,43 @@ class Server:
         )
         socketio = SocketIO(app)
 
+        @app.before_request
+        def before_request():
+            request.handler = ServerHandler(session=SessionMaker())
+
         @app.route('/')
         def index():
             return render_template('index.html', 
                 board=self.__random_board(10)
             )
 
-        @app.route('/view/<game_uuid>')
-        def view_game(game_uuid: str):
+        @app.route('/view/<game_id>')
+        def view_game(game_id: str):
             try:
-                game = self.__get_game(game_uuid)
+                game = request.handler.get_game(game_id=game_id)
 
-                return render_template('view.html', 
-                    game_uuid=game_uuid, 
-                    board=game.pretty_board, 
-                    players=game.players,
-                    playing=game.all_players,
-                    winner=game.winner,
-                    is_complete=game.is_complete
+                if not game:
+                    raise LEMException("Game not found.")
+
+                return render_template('view.html',
+                    game=game
                 )
             except LEMException:
                 return redirect('/')
 
-        @app.route('/play/<game_uuid>')
-        def play_game(game_uuid: str):
+        @app.route('/play/<game_id>')
+        def play_game(game_id: str):
             try:
-                game = self.__get_game(game_uuid)
+                game = request.handler.get_game(game_id=game_id)
 
-                if game.is_complete:
-                    return redirect(f"/view/{game_uuid}")
+                if not game:
+                    raise LEMException("Game not found.")
 
-                return render_template('play.html', 
-                    game_uuid=game_uuid, 
-                    board=game.pretty_board, 
-                    playing=game.all_players,
-                    winner=game.winner
+                if game.complete:
+                    return redirect(f"/view/{game.id}")
+
+                return render_template('play.html',
+                    game=game
                 )
             except LEMException:
                 return redirect('/')
@@ -157,31 +100,26 @@ class Server:
         def new_game_post():
             try:
                 parameters = self.__get_dataclass(Parameters, request.form)
-                game = Game(
-                    parameters=parameters
-                )
+                game = request.handler.create_game(parameters=parameters)
 
-                self.__start_game(game)
-
-                return redirect(f"/view/{game.uuid}")
+                return redirect(f"/view/{game.id}")
             except LEMException as err:
                 return render_template('new.html', error=str(err))
 
         @app.route('/games', methods=['GET'])
         def games_list():
             return render_template("games.html", 
-                open_games=self.__get_open_games(), 
-                completed_games=self.__get_completed_games()
+                open_games=request.handler.get_open_games(), 
+                completed_games=request.handler.get_completed_games()
             )
 
-        @app.route('/player/<player_uuid>', methods=['GET'])
-        def player_profile(player_uuid: str):
+        @app.route('/player/<player_id>', methods=['GET'])
+        def player_profile(player_id: str):
             try:
-                player = self.__get_player(uuid=player_uuid)
+                player = request.handler.get_player(player_id=player_id)
 
                 return render_template("player.html",
-                    player=player,
-                    games=[self.__games[game_uuid] for game_uuid in player.games]
+                    player=player
                 )
             except:
                 return redirect("/")
@@ -189,70 +127,99 @@ class Server:
         @app.route('/leaderboard', methods=['GET'])
         def leaderboard():
             return render_template("leaderboard.html",
-                players=self.__players.values()
+                players=list(sorted(request.handler.get_players(), key=lambda player: player.score, reverse=True))
             )
 
         @socketio.on("view")
         def view(data):
+            request.handler = ServerHandler(session=SessionMaker())
+
             packet = self.__get_dataclass(ViewPacket, data)
-            join_room(packet.game_uuid)
+
+            game = request.handler.get_game(game_id=packet.game_id)
+
+            if not game:
+                raise LEMException("No game with game_id.")
+
+            join_room(game.id)
 
         @socketio.on("join")
         def join(data):
-            packet = self.__get_dataclass(JoinPacket, data)
-            game = self.__get_game(uuid=packet.game_uuid)
+            request.handler = ServerHandler(session=SessionMaker())
 
-            if game.is_complete:
+            packet = self.__get_dataclass(JoinPacket, data)
+
+            game = request.handler.get_game(game_id=packet.game_id)
+
+            if not game:
+                raise LEMException("No game with game_id.")
+
+            if game.complete:
                 raise LEMException("Game complete.")
 
-            player = self.__make_player(uuid=packet.player_uuid, type=packet.player_type)
+            if request.handler.has_player(player_name=packet.player_name):
+                player = request.handler.get_player(player_name=packet.player_name)
+            else:
+                player = request.handler.create_player(player_name=packet.player_name)
 
-            if player.has_session(game_uuid=game.uuid):
-                raise LEMException("Already a session with this player in this game.")
+            session = request.handler.get_session(socket_id=request.sid)
+            if not session:
+                try:
+                    session = request.handler.create_session(
+                        socket_id=request.sid,
+                        player_type=packet.player_type,
+                        game_id=game.id,
+                        player_id=player.id
+                    )
+                except:
+                    raise LEMException("Unable to make new session.")
 
-            if not game.join(player=player, player_type=packet.player_type):
-                raise LEMException("Could not join game.")
-
-            session = PlayerSession(
-                game_uuid=game.uuid,
-                index=game.player_count - 1,
-                socket=request.sid
-            )
-
-            player.begin_session(session=session)
-
-            join_room(game.uuid)
+            join_room(game.id)
 
             join_packet = JoinResponsePacket(
-                player_uuid=player.uuid,
-                player_index=session.index,
-                player_type=packet.player_type
+                socket_id=request.sid,
+                player_id=player.id,
+                player_name=player.name,
+                player_type=session.player_type,
+                tile=session.tile
             )
 
-            emit("join", join_packet.to_dict(), to=game.uuid)
+            emit("join", join_packet.to_dict(), to=game.id)
 
-            if game.all_players:
-                self.__handle_play(game=game)
+            if game.started:
+                emit("play", request.handler.get_play_packet(socket_id=request.sid).to_dict(), to=game.id)
 
         @socketio.on("play")
         def play(data):
+            request.handler = ServerHandler(session=SessionMaker())
+
             packet = self.__get_dataclass(MovePacket, data)
-            player = self.__get_player(uuid=packet.player_uuid)
-            session = player.get_session(socket=request.sid)
-            game = self.__get_game(uuid=session.game_uuid)
 
             try:
-                game.play(packet)
+                session = request.handler.play(socket_id=request.sid, packet=packet)
+                emit("play", request.handler.get_play_packet(socket_id=request.sid).to_dict(), to=session.game.id)
             finally:
-                if game.check_complete():
-                    self.__handle_win(game=game)
+                session = request.handler.get_session(socket_id=request.sid)
 
-                self.__handle_play(game=game)
+                if not session:
+                    return
+
+                if session.game.complete:
+                    winner = session.game.winner
+                    player_name = winner.name if winner else None
+                    player_id = winner.id if winner else None
+
+                    emit("win", WinPacket(tile=session.game.tile_winner, player_name=player_name, player_id=player_id).to_dict(), to=session.game.id)
 
         @socketio.on("parameters")
         def parameters(data):
+            request.handler = ServerHandler(session=SessionMaker())
+
             packet = self.__get_dataclass(ParametersPacket, data)
-            game = self.__get_game(uuid=packet.game_uuid)
+            game = request.handler.get_game(game_id=packet.game_id)
+
+            if game == None:
+                raise LEMException("No game with game_id.")
 
             emit("parameters", game.parameters.to_dict())
 
