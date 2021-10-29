@@ -61,6 +61,7 @@ class PlayPacket:
         d['tile'] = d['tile'].value
         d['board'] = [[tile.value for tile in row] for row in d['board']]
         d['moves'] = [(x, y, tile.value) for x, y, tile in d['moves']]
+        d['blocks'] = [(x, y) for x, y in d['blocks']]
 
         return d
 
@@ -69,6 +70,7 @@ class PlayPacket:
         d['tile'] = Tile(d['tile'])
         d['board'] = [[Tile(tile) for tile in row] for row in d['board']]
         d['moves'] = [(x, y, Tile(tile)) for x, y, tile in d['moves']]
+        d['blocks'] = [(x, y) for x, y in d['blocks']]
 
         return PlayPacket(**d)
 

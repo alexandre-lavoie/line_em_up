@@ -67,11 +67,11 @@ class Game(Base):
 
     @property
     def blocks(self):
-        return [(tile.x, tile.y) for tile in filter(lambda tile: not tile.type == Tile.BLOCK, self.tiles)]
+        return [(tile.x, tile.y) for tile in filter(lambda tile: tile.type == Tile.BLOCK, self.tiles)]
 
     @property
     def moves(self):
-        return [(tile.x, tile.y, tile.type) for tile in filter(lambda tile: tile.type == Tile.BLOCK, self.tiles)]
+        return [(tile.x, tile.y, tile.type) for tile in filter(lambda tile: not tile.type == Tile.BLOCK and not tile.type == Tile.EMPTY, self.tiles)]
 
     @property
     def tile_board(self) -> List[List[Tile]]:

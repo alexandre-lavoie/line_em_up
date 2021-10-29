@@ -14,6 +14,10 @@ class Heuristic(ABC):
         return 0
 
     @property
+    def tile(self) -> Tile:
+        return self.__tile
+
+    @property
     def max_depth(self) -> int:
         return self.__parameters.depth1 if self.__tile == Tile.WHITE else self.__parameters.depth2
 
@@ -45,6 +49,10 @@ class Algorithm(ABC):
 
     def get_score(self, data: any) -> float:
         return self.__heuristic.get_score(data)
+
+    @property
+    def tile(self) -> Tile:
+        return self.__heuristic.tile
 
     @property
     def max_depth(self) -> int:

@@ -23,9 +23,13 @@ def parse_args():
     pool_parser.add_argument("--name", help="AI name to connect with.", default=str(uuid.uuid4()))
     pool_parser.add_argument("--size", help="AI pool size.", type=int, default=1)
 
+    copy_parser = type_parser.add_parser("copy")
+
     return parser.parse_args()
 
 def main():
+    import os
+
     load_dotenv()
     args = parse_args()
 
@@ -53,6 +57,15 @@ def main():
             player_name=args.name,
             pool_count=args.size
         ))
+    elif args.type == "copy":
+        import shutil
+        import os.path
+
+        target = os.path.join(os.path.dirname(__file__), "./line_em_up/ai/")
+        if os.path.exists(target):
+            shutil.rmtree(target)
+
+        shutil.copytree(os.environ["AI_PATH"], target)
 
 if __name__ == "__main__":
     main()
