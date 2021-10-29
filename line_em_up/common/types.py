@@ -27,9 +27,9 @@ GameUUID = str
 PlayerUUID = str
 
 Emojis = {
-    "WHITE": "&#x2705;",
+    "WHITE": "&#x1f7e9;",
     "EMPTY": "&#x2b1c;",
-    "BLACK": "&#x1f197;",
+    "BLACK": "&#x1f537;",
     "BLOCK": "&#x26d4;",
     "HUMAN": "&#x1f466;",
     "AI": "&#129302;",
