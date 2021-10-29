@@ -12,6 +12,7 @@ class Client(ABC):
     _done: bool
     _player: Player
     _tile: Tile
+    _done: bool
 
     def __init__(self, config: ClientConfig):
         self._config = config
@@ -64,6 +65,10 @@ class Client(ABC):
             )
         else:
             raise Exception("Unimplemented PlayerType.")
+
+    @property
+    def done(self):
+        return self._done
 
     @abstractmethod
     def run(self):
@@ -135,11 +140,13 @@ class NetworkClient(Client):
             else:
                 print("I Lose")
 
+            self._done = True
             sio.disconnect()
 
         @sio.event
         def error(data):
             print(data["error"])
+            self._done = True
             sio.disconnect()
 
         sio.connect(self._config.url)

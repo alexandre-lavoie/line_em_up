@@ -110,7 +110,7 @@ class Server:
         @app.route('/games', methods=['GET'])
         def games_list():
             return render_template("games.html", 
-                open_games=request.handler.get_open_games(), 
+                active_games=request.handler.get_active_games(), 
                 completed_games=request.handler.get_completed_games(),
                 emojis=Emojis
             )
@@ -132,6 +132,18 @@ class Server:
             return render_template("leaderboard.html",
                 players=list(sorted(request.handler.get_players(), key=lambda player: player.score, reverse=True))
             )
+
+        @app.route('/api/games', methods=['GET'])
+        def games_api_list_any():
+            return {
+                "open_games": [game.id for game in request.handler.get_open_games()]
+            }
+
+        @app.route('/api/games/<player_name>', methods=['GET'])
+        def games_api_list(player_name: str):
+            return {
+                "open_games": [game.id for game in request.handler.get_open_games(player_name=player_name)]
+            }
 
         @socketio.on("view")
         def view(data):

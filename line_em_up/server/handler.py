@@ -31,8 +31,16 @@ class ServerHandler:
     def get_games(self) -> List[Game]:
         return self.session.query(Game).all()
 
-    def get_open_games(self) -> List[Game]:
+    def get_active_games(self) -> List[Game]:
         return self.session.query(Game).filter(Game.listed == True, Game.complete == False).all()
+
+    def get_open_games(self, player_name: str = None) -> List[Game]:
+        open_games = list(filter(lambda game: not game.started, self.session.query(Game).filter(Game.listed == True, Game.complete == False).all()))
+
+        if player_name:
+            open_games = list(filter(lambda game: not any(session.player.name == player_name for session in game.sessions), open_games))
+
+        return open_games
 
     def get_completed_games(self) -> List[Game]:
         return self.session.query(Game).filter(Game.complete == True).all()

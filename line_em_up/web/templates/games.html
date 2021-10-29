@@ -12,7 +12,7 @@
                 <th>Active Games</th>
                 <th>Players</th>
             </tr>
-            {% for game in open_games %}
+            {% for game in active_games %}
             <tr>
                 <td><a target="_blank" href="/view/{{ game.id }}">{{ game.id }}</a></td>
                 <td>{{ game.player_count }}/2</td>
