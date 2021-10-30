@@ -248,4 +248,4 @@ class Server:
                 )
                 emit("error", packet.to_dict())
 
-        socketio.run(app, debug=self._config.debug)
+        socketio.run(app, debug=self._config.debug, port=self._config.port)

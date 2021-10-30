@@ -16,7 +16,8 @@ def parse_args():
 
     server_parser = type_parser.add_parser("server")
 
-    server_parser.add_argument("--debug", action="store_true")
+    server_parser.add_argument("--debug", help="Set server in debug mode.", action="store_true")
+    server_parser.add_argument("--port", help="Specify port to run on.", type=int, default=5000)
 
     pool_parser = type_parser.add_parser("pool")
 
@@ -37,7 +38,8 @@ def main():
         from line_em_up.server import server_main, ServerConfig
 
         server_main(ServerConfig(
-            debug=args.debug
+            debug=args.debug,
+            port=args.port
         ))
     elif args.type == "client":
         from line_em_up.client import client_main, ClientConfig
