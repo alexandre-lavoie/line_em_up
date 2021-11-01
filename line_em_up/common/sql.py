@@ -314,7 +314,10 @@ class Statistics(Base):
 
     @property
     def node_times(self) -> List[int]:
-        return [int(time) for time in self._node_times.split(",")]
+        if self._node_times.strip() == "":
+            return []
+
+        return [float(time) for time in self._node_times.split(",")]
 
     @node_times.setter
     def node_times(self, times: List[int]):
@@ -322,6 +325,9 @@ class Statistics(Base):
 
     @property
     def depth_counts(self) -> List[int]:
+        if self._depth_counts.strip() == "":
+            return []
+
         return [int(count) for count in self._depth_counts.split(",")]
 
     @depth_counts.setter
@@ -330,11 +336,15 @@ class Statistics(Base):
 
     @property
     def average_time(self) -> float:
+        if len(self.node_times) == 0:
+            return 0
+
         return sum(self.node_times) / len(self.node_times)
 
     @property
     def average_depth(self) -> float:
-        if len(self.depth_counts) == 0: return 0
+        if sum(self.depth_counts) == 0: 
+            return 0
 
         return sum(depth * count for depth, count in enumerate(self.depth_counts, 1)) / sum(self.depth_counts)
 

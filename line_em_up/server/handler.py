@@ -215,7 +215,8 @@ class ServerHandler:
             raise LEMException("Not player turn.")
 
         if not session.game.last_time == None:
-            if session.player_type == PlayerType.AI and play_time - session.game.last_time > session.game.max_time:
+            # TODO: Better server transfer buffer?
+            if session.player_type == PlayerType.AI and play_time - session.game.last_time > session.game.max_time + 10:
                 self._handle_invalid_play(
                     session=session,
                     message="Too slow."

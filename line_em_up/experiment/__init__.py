@@ -97,7 +97,7 @@ def experiment_main():
     url = "http://localhost:5000/"
 
     game_ids = []
-    for parameters in PARAMETERS:
+    for parameters in PARAMETERS[:1]:
         res = requests.post(url + "api/new", json=parameters.to_dict())
         data = res.json()
 

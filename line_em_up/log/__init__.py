@@ -54,7 +54,7 @@ def make_game_traces(db_session: any, log_dir: str):
             if move.statistics:
                 log.append("")
                 statistics = move.statistics[0]
-                log.append(f"i   Evaluation time: {statistics.average_time}s")
+                log.append(f"i   Evaluation time: {sum(statistics.node_times)}s")
                 log.append(f"ii  Heuristic evaluations: {sum(statistics.depth_counts)}")
                 log.append(f"iii Evaluations by depth: {statistics.depth_counts}")
                 log.append(f"iv  Average evaluation depth: {statistics.average_depth}")
@@ -77,7 +77,7 @@ def make_game_traces(db_session: any, log_dir: str):
 
         if len(all_statistics) > 0:
             log.append("")
-            log.append(f"6(b)i   Average evaluation time: {sum(statistics.average_time for statistics in all_statistics) / len(all_statistics)}s")
+            log.append(f"6(b)i   Average evaluation time: {sum(sum(statistics.node_times) for statistics in all_statistics) / len(all_statistics)}s")
             log.append(f"6(b)ii  Total heuristic evaluations: {sum(sum(statistics.depth_counts) for statistics in all_statistics)}")
             log.append(f"6(b)iii Evaluations by depths: {[sum(dv) for dv in itertools.zip_longest(*[statistics.depth_counts for statistics in all_statistics], fillvalue=0)]}")
             log.append(f"6(b)iv  Average evaluation depth: {sum(statistics.average_depth for statistics in all_statistics) / len(all_statistics)}")
@@ -125,7 +125,7 @@ def make_scoreboard(db_session: any, log_dir: str):
             continue
 
         stats_count += 1
-        average_times += sum(statistics.average_time for statistics in all_statistics) / len(all_statistics)
+        average_times += sum(sum(statistics.node_times) for statistics in all_statistics) / len(all_statistics)
         evaluation_count += sum(sum(statistics.depth_counts) for statistics in all_statistics)
         game_depth_counts = [sum(dv) for dv in itertools.zip_longest(*[statistics.depth_counts for statistics in all_statistics], fillvalue=0)]
         depth_counts = [sum(dv) for dv in itertools.zip_longest(depth_counts, game_depth_counts, fillvalue=0)]
