@@ -18,6 +18,7 @@ def parse_args():
 
     server_parser.add_argument("--debug", help="Set server in debug mode.", action="store_true")
     server_parser.add_argument("--port", help="Specify port to run on.", type=int, default=5000)
+    server_parser.add_argument("--db", help="SQLite database file.", default="./data.db")
 
     pool_parser = type_parser.add_parser("pool")
 
@@ -25,6 +26,10 @@ def parse_args():
     pool_parser.add_argument("--size", help="AI pool size.", type=int, default=1)
 
     copy_parser = type_parser.add_parser("copy")
+
+    log_parser = type_parser.add_parser("log")
+
+    log_parser.add_argument("--db", help="SQLite database file.", default="./data.db")
 
     return parser.parse_args()
 
@@ -36,10 +41,12 @@ def main():
 
     if args.type == "server":
         from line_em_up.server import server_main, ServerConfig
+        import os.path
 
         server_main(ServerConfig(
             debug=args.debug,
-            port=args.port
+            port=args.port,
+            db=os.path.abspath(args.db)
         ))
     elif args.type == "client":
         from line_em_up.client import client_main, ClientConfig
@@ -68,6 +75,13 @@ def main():
             shutil.rmtree(target)
 
         shutil.copytree(os.environ["AI_PATH"], target)
+    elif args.type == "log":
+        from line_em_up.log import log_main, LogConfig
+        import os.path
+
+        log_main(LogConfig(
+            db=os.path.abspath(args.db)
+        ))
 
 if __name__ == "__main__":
     main()

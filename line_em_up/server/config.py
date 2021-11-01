@@ -6,3 +6,4 @@ from dataclasses_json import dataclass_json
 class ServerConfig:
     debug: bool
     port: int
+    db: str

@@ -37,7 +37,7 @@ class Server:
             )
         else:
             engine = create_engine(
-                f'sqlite:///{os.path.abspath("./data.db")}',
+                f'sqlite:///{self._config.db}',
                 connect_args={"check_same_thread": False},
             )
         Base.metadata.create_all(engine)

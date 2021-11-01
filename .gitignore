@@ -3,3 +3,4 @@ screenshots/
 .env
 *.pyc
 *.db
+logs/

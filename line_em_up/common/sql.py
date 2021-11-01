@@ -119,8 +119,12 @@ class Game(Base):
         return len(self.blocks)
 
     @property
+    def move_tiles(self):
+        return list(filter(lambda tile: not tile.type in [Tile.BLOCK, Tile.EMPTY], self.tiles))
+
+    @property
     def moves(self):
-        return [(tile.x, tile.y, tile.type) for tile in filter(lambda tile: not tile.type == Tile.BLOCK and not tile.type == Tile.EMPTY, self.tiles)]
+        return [(tile.x, tile.y, tile.type) for tile in self.move_tiles]
 
     @property
     def tile_board(self) -> List[List[Tile]]:
@@ -322,6 +326,10 @@ class Statistics(Base):
     @depth_counts.setter
     def depth_counts(self, counts: List[int]):
         self._depth_counts = ','.join(str(count) for count in counts)
+
+    @property
+    def average_time(self) -> float:
+        return sum(self.node_times) / len(self.node_times)
 
     @property
     def average_depth(self) -> float:

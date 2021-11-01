@@ -123,7 +123,7 @@ class ErrorPacket:
 @dataclass_json
 @dataclass
 class MoveStatistics:
-    node_times: List[int]
+    node_times: List[float]
     depth_counts: List[int]
     average_recursive_depth: float
 

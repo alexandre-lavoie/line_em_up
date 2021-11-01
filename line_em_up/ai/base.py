@@ -11,7 +11,7 @@ class MiniMax(Algorithm):
             move=(random.randint(0, self.board_size - 1), random.randint(0, self.board_size - 1)),
             statistics=MoveStatistics(
                 node_times=[0, 0, 0],
-                depth_counts=[1, 1, 1],
+                depth_counts=[1] * self.max_depth,
                 average_recursive_depth=0
             )
         )
@@ -23,7 +23,7 @@ class AlphaBeta(Algorithm):
             move=(random.randint(0, self.board_size - 1), random.randint(0, self.board_size - 1)),
             statistics=MoveStatistics(
                 node_times=[0, 0, 0],
-                depth_counts=[1, 1, 1],
+                depth_counts=[1] * self.max_depth,
                 average_recursive_depth=0
             )
         )
