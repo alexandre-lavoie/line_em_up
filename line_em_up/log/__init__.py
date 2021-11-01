@@ -73,11 +73,10 @@ def make_game_traces(db_session: any, log_dir: str):
         else:
             log.append(f"The winner is {game.tile_winner.value}!")
 
-        log.append("")
-
         all_statistics = [move.statistics[0] for move in game.move_tiles if move.statistics]
 
         if len(all_statistics) > 0:
+            log.append("")
             log.append(f"6(b)i   Average evaluation time: {sum(statistics.average_time for statistics in all_statistics) / len(all_statistics)}s")
             log.append(f"6(b)ii  Total heuristic evaluations: {sum(sum(statistics.depth_counts) for statistics in all_statistics)}")
             log.append(f"6(b)iii Evaluations by depths: {[sum(dv) for dv in itertools.zip_longest(*[statistics.depth_counts for statistics in all_statistics], fillvalue=0)]}")
