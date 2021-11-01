@@ -15,7 +15,7 @@
             {% for game in active_games %}
             <tr>
                 <td><a target="_blank" href="/view/{{ game.id }}">{{ game.id }}</a></td>
-                <td>{{ game.player_count }}/2</td>
+                <td>{{ game.player_count }}/{{ game.max_player_count }}</td>
             </tr>
             {% endfor %}
         </table>
@@ -25,18 +25,30 @@
         <table id="completed_games" class="table table-bordered d-flex justify-content-center">
             <tr>
                 <th>Completed Games</th>
-                {% for i in range(1, 3) %}
-                <th>Player {{ i }}</th>
-                <th>Type {{ i }}</th>
-                {% endfor %}
+                <th>Players</th>
             </tr>
             {% for game in completed_games %}
             <tr>
-                <td><a target="_blank" href="/view/{{ game.id }}">{{game.id}}</a></td>
+                <td><a target="_blank" href="/view/{{ game.id }}">{{ game.id }}</a></td>
+                <td>
                 {% for session in game.unique_sessions %}
-                <td><a href="/player/{{ session.player.id }}">{{ session.player.name }}</a></td>
-                <td>{% if session.player_type == "human" %}{{ emojis['HUMAN']|safe }}{% else %}{{ emojis['AI']|safe }}{% endif %}{% if session.winner %}{{ emojis['WIN']|safe }}{% endif %}</td>
+                <a href="/player/{{ session.player.id }}">{{ session.player.name }}</a> ({% if session.game.complete %}
+                {% if session.win %}
+                {{ emojis['WIN']|safe }}
+                {% elif session.tie %}
+                {{ emojis['TIE']|safe }}
+                {% else %}
+                {{ session.rank }}
+                {% endif %}
+                {% else %}
+                {{ emojis['UNKNOWN']|safe }}
+                {% endif %}
+                {% if session.player_type == "human" %}
+                {{ emojis['HUMAN']|safe }}
+                {% else %}
+                {{ emojis['AI']|safe }}{% endif %})
                 {% endfor %}
+                </td>
             </tr>
             {% endfor %}
         </table>

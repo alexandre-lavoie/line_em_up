@@ -196,7 +196,8 @@ class Server:
                 player_id=player.id,
                 player_name=player.name,
                 player_type=session.player_type,
-                tile=session.tile
+                tile=session.tile,
+                tile_emoji=tile_to_emoji(session.tile)
             )
 
             emit("join", join_packet.to_dict(), to=game.id)
@@ -212,7 +213,6 @@ class Server:
 
             try:
                 session = request.handler.play(socket_id=request.sid, packet=packet)
-                emit("play", request.handler.get_play_packet(socket_id=request.sid).to_dict(), to=session.game.id)
             finally:
                 session = request.handler.get_session(socket_id=request.sid)
 
@@ -220,11 +220,13 @@ class Server:
                     return
 
                 if session.game.complete:
-                    winner = session.game.winner
-                    player_name = winner.name if winner else None
-                    player_id = winner.id if winner else None
+                    packet = WinPacket(
+                        ranks = session.game.ranks
+                    )
 
-                    emit("win", WinPacket(tile=session.game.tile_winner, player_name=player_name, player_id=player_id).to_dict(), to=session.game.id)
+                    emit("win", packet.to_dict(), to=session.game.id)
+                else:
+                    emit("play", request.handler.get_play_packet(socket_id=request.sid).to_dict(), to=session.game.id)
 
         @socketio.on("parameters")
         def parameters(data):

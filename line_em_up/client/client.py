@@ -13,6 +13,7 @@ class Client(ABC):
     _player: Player
     _tile: Tile
     _done: bool
+    _id: int
 
     def __init__(self, config: ClientConfig):
         self._config = config
@@ -20,10 +21,7 @@ class Client(ABC):
         self._done = False
         self._player = None
         self._tile = Tile.EMPTY
-
-    @property
-    def player_index(self) -> int:
-        return self._player_index
+        self._id = 0
 
     @property
     def done(self) -> bool:
@@ -33,32 +31,28 @@ class Client(ABC):
         if self._config.player_type == PlayerType.HUMAN:
             self._player = HumanPlayer()
         elif self._config.player_type == PlayerType.AI:
-            tile = self._tile
-            algorithm_name = self._parameters.algorithm
-            heuristic_index = self._parameters.heuristic1 if tile == Tile.WHITE else self._parameters.heuristic2
-
             heuristic_types = {
-                HeuristicType.ONE: Heuristic1, 
+                HeuristicType.ONE: Heuristic1,
                 HeuristicType.TWO: Heuristic2
             }
-            if heuristic_index in heuristic_types:
-                heuristic = heuristic_types[heuristic_index](
-                    tile=tile, 
+            if self._parameters.heuristics[self._tile.value] in heuristic_types:
+                heuristic = heuristic_types[self._parameters.heuristics[self._tile.value]](
+                    tile=self._tile,
                     parameters=self._parameters
                 )
             else:
-                raise Exception(f"Unknown heuristic {heuristic_index}.")
+                raise Exception(f"Unknown heuristic.")
 
             algorithm_types = {
                 AlgorithmType.MINIMAX: MiniMax,
                 AlgorithmType.ALPHABETA: AlphaBeta
             }
-            if algorithm_name in algorithm_types:
-                algorithm = algorithm_types[algorithm_name](
+            if self._parameters.algorithm in algorithm_types:
+                algorithm = algorithm_types[self._parameters.algorithm](
                     heuristic=heuristic
                 )
             else:
-                raise Exception(f"Unknown algorithm {algorithm_name}.")
+                raise Exception(f"Unknown algorithm.")
 
             self._player = AIPlayer(
                 algorithm=algorithm
@@ -75,9 +69,7 @@ class Client(ABC):
         pass
 
     def next_move(self, packet: PlayPacket) -> MovePacket:
-        return MovePacket(
-            move=self._player.next_move(packet)
-        )
+        return self._player.next_move(packet)
 
 class NetworkClient(Client):
     def run(self):
@@ -114,6 +106,7 @@ class NetworkClient(Client):
             if packet.player_name == self._config.player_name:
                 print("I Joined")
 
+                self._id = packet.player_id
                 self._tile = packet.tile
                 self.init_player()
             else:
@@ -133,12 +126,7 @@ class NetworkClient(Client):
         def win(data):
             packet = WinPacket.from_dict(data)
 
-            if packet.player_name == None:
-                print("Tie")
-            elif packet.player_name == self._config.player_name:
-                print("I Win")
-            else:
-                print("I Lose")
+            print(f"I Ranked {packet.ranks[self._id]}")
 
             self._done = True
             sio.disconnect()

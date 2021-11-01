@@ -19,7 +19,7 @@ class Heuristic(ABC):
 
     @property
     def max_depth(self) -> int:
-        return self.__parameters.depth1 if self.__tile == Tile.WHITE else self.__parameters.depth2
+        return self.__parameters.depths[self.__tile.value]
 
     @property
     def block_count(self) -> int:

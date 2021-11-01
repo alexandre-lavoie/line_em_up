@@ -16,10 +16,12 @@ class PlayerType(str, Enum):
     AI = "ai"
 
 class Tile(Enum):
-    EMPTY = 0
-    WHITE = 1
-    BLACK = 2
-    BLOCK = 3
+    EMPTY = -2
+    BLOCK = -1
+    P1 = 0
+    P2 = 1
+    P3 = 2
+    P4 = 3
 
 Board = List[List[Tile]]
 Move = Tuple[int, int]
@@ -27,9 +29,11 @@ GameUUID = str
 PlayerUUID = str
 
 Emojis = {
-    "WHITE": "&#x1f7e9;",
+    "P1": "&#x1f7e9;",
+    "P2": "&#x1f537;",
+    "P3": "&#x2b50;",
+    "P4": "&#x1f49c;",
     "EMPTY": "&#x2b1c;",
-    "BLACK": "&#x1f537;",
     "BLOCK": "&#x26d4;",
     "HUMAN": "&#x1f466;",
     "AI": "&#129302;",

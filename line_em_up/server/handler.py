@@ -8,7 +8,7 @@ import time
 from ..common.exceptions import LEMException
 from ..common.types import Tile, PlayerType
 from ..common.packets import Parameters, PlayPacket, MovePacket
-from .sql import GameSession, Game, Player, GameTile
+from .sql import GameSession, Game, Player, GameTile, Statistics
 
 class ServerHandler:
     session: Session
@@ -84,14 +84,19 @@ class ServerHandler:
         self.session.add_all(tiles)
 
     def create_game(self, parameters: Parameters) -> Game:
-        game = Game(**parameters.to_dict())
+        block_count = parameters.block_count
+
+        pdict = parameters.to_dict()
+        del pdict['block_count']
+
+        game = Game(**pdict)
 
         self.session.add(game)
         self._flush()
 
         self._create_blocks(
             game_id=game.id,
-            block_count=parameters.block_count,
+            block_count=block_count,
             board_size=parameters.board_size
         )
         self._commit()
@@ -132,28 +137,54 @@ class ServerHandler:
 
         return PlayPacket(
             tile=session.game.tile_turn,
-            board=session.game.tile_board,
             emoji_board=session.game.pretty_board,
             moves=session.game.moves,
-            blocks=session.game.blocks
+            blocks=session.game.blocks,
+            order=session.game.tile_order
         )
 
     def _handle_win(self, session: GameSession):
+        if not session.game.check_complete(): 
+            return False
+
         self.session.execute(
             update(Game)
             .where(Game.id == session.game.id)
             .values(
                 tile_turn=Tile.EMPTY,
-                tile_winner=session.game.tile_winner, 
+                tile_winner=session.game.tile_winner,
                 complete=True
+            )
+        )
+        self._commit()
+
+        return True
+
+    def _handle_next_move(self, session: GameSession):
+        self.session.execute(
+            update(Game)
+            .where(Game.id == session.game.id)
+            .values(
+                tile_turn=session.game.next_tile,
+                last_time=time.time()
             )
         )
         self._commit()
 
     def _handle_invalid_play(self, session: GameSession, message: str):
         if session.player_type == PlayerType.AI:
-            session.game.tile_winner = Tile.WHITE if session.tile == Tile.BLACK else Tile.BLACK
-            self._handle_win(session=session)
+            session.game.add_loser(session.tile)
+            self.session.execute(
+                update(Game)
+                .where(Game.id == session.game.id)
+                .values(
+                    _tile_losers=','.join(str(tile.value) for tile in session.game.tile_losers)
+                )
+            )
+            self._commit()
+
+            if not self._handle_win(session=session):
+                self._handle_next_move(session=session)
 
         raise LEMException(message)
 
@@ -206,17 +237,16 @@ class ServerHandler:
         self.session.add(move)
         self._commit()
 
-        if session.game.check_complete():
-            self._handle_win(session=session)
-        else:
-            self.session.execute(
-                update(Game)
-                .where(Game.id == session.game.id)
-                .values(
-                    tile_turn=Tile.WHITE if session.game.tile_turn == Tile.BLACK else Tile.BLACK,
-                    last_time=time.time()
-                )
+        if packet.statistics:
+            statistics = Statistics(
+                tile_id=move.id,
+                **packet.statistics.to_dict()
             )
+
+            self.session.add(statistics)
             self._commit()
+
+        if not self._handle_win(session=session):
+            self._handle_next_move(session=session)
 
         return session

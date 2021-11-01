@@ -19,13 +19,25 @@
             <tr>
                 <th>Game</th>
                 <th>Type</th>
-                <th>State</th>
+                <th>Rank</th>
             </tr>
             {% for session in player.unique_sessions %}
             <tr>
                 <td><a target="_blank" href="/view/{{ session.game.id }}">{{ session.game.id }}</a></td>
                 <td>{% if session.player_type == "human" %}{{ emojis['HUMAN']|safe }}{% else %}{{ emojis['AI']|safe }}{% endif %}</td>
-                <td>{% if session.game.complete %}{% if session.winner %}{{ emojis['WIN']|safe }}{% elif session.game.winner == None %}{{ emojis['TIE']|safe }}{% else %}{{ emojis['LOSE']|safe }}{% endif %}{% else %}{{ emojis['UNKNOWN']|safe }}{% endif %}</td>
+                <td>
+                    {% if session.game.complete %}
+                    {% if session.win %}
+                    {{ emojis['WIN']|safe }}
+                    {% elif session.tie %}
+                    {{ emojis['TIE']|safe }}
+                    {% else %}
+                    {{ session.rank }}
+                    {% endif %}
+                    {% else %}
+                    {{ emojis['UNKNOWN']|safe }}
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </table>

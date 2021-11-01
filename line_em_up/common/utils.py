@@ -2,14 +2,8 @@ from .types import Tile, Emojis
 from typing import Tuple, Union, List
 
 def tile_to_emoji(tile: Tile) -> str:
-    if tile == Tile.EMPTY:
-        return Emojis["EMPTY"]
-    elif tile == Tile.WHITE:
-        return Emojis["WHITE"]
-    elif tile == Tile.BLACK:
-        return Emojis["BLACK"]
-    elif tile == Tile.BLOCK:
-        return Emojis["BLOCK"]
+    if tile.name in Emojis:
+        return Emojis[tile.name]
     else:
         return Emojis["UNKNOWN"]
 

@@ -15,33 +15,39 @@
 
             socket.on("error", handle_error);
 
-            socket.on("join", ({ player_id, player_name, player_type, socket_id }) => {
+            socket.on("join", ({ tile_emoji, player_id, player_name, player_type, socket_id }) => {
                 set_message(`${player_name} Joined`)
 
                 let table = document.getElementById("players");
                 let row = table.insertRow(-1);
-                let cell0 = row.insertCell(-1);
-                cell0.id = `player_id_${player_id}`;
-                cell0.innerHTML = `<a href="/player/${player_id}">${player_name}</a>`;
+                let cell = row.insertCell(-1);
+                cell.id = `player_id_${player_id}`;
+                cell.innerHTML = `<a href="/player/${player_id}">${player_name}</a>`;
 
-                let cell1 = row.insertCell(-1);
-                cell1.id = `player_type_${player_id}`;
-                cell1.innerHTML = (player_type == "human") ? "{{ emojis['HUMAN']|safe }}" : "{{ emojis['AI']|safe }}";
+                cell = row.insertCell(-1);
+                cell.id = `player_tile_${player_id}`;
+                cell.innerHTML = tile_emoji;
 
-                let cell2 = row.insertCell(-1);
-                cell2.id = `player_session_${player_id}`;
-                cell2.innerText = `${socket_id}`;
+                cell = row.insertCell(-1);
+                cell.id = `player_type_${player_id}`;
+                cell.innerHTML = (player_type == "human") ? "{{ emojis['HUMAN']|safe }}" : "{{ emojis['AI']|safe }}";
+
+                cell = row.insertCell(-1);
+                cell.id = `player_rank_${player_id}`;
+                cell.innerHTML = "{{ emojis['UNKNOWN']|safe }}";
+
+                cell = row.insertCell(-1);
+                cell.id = `player_session_${player_id}`;
+                cell.innerText = `${socket_id}`;
             });
 
-            socket.on("win", ({ player_id, player_name }) => {
-                if(player_name !== null) {
-                    set_message(`${player_name} Won`);
+            socket.on("win", ({ ranks }) => {
+                set_message("Game Complete");
 
-                    let player_type = document.getElementById(`player_type_${player_id}`);
-                    player_type.innerHTML = player_type.innerHTML + "{{ emojis['WIN']|safe }}";
-                } else {
-                    set_message("Tie");
-                }
+                Object.entries(ranks).forEach(([player_id, rank]) => {
+                    let player_rank = document.getElementById(`player_rank_${player_id}`);
+                    player_rank.innerHTML = rank;
+                });
 
                 document.getElementById("join_container").remove();
             });
@@ -63,11 +69,7 @@
         <div class="d-flex justify-content-center">
             <div id="message" class="alert alert-dark text-center">
                 {% if game.complete %}
-                {% if game.winner == None %}
-                Tie
-                {% else %}
-                {{ game.winner.name }} Won
-                {% endif %}
+                Game Complete
                 {% elif game.started %}
                 Playing
                 {% else %}
@@ -84,13 +86,29 @@
         <table id="players" class="table table-bordered d-flex justify-content-center">
             <tr>
                 <th>Player</th>
+                <th>Tile</th>
                 <th>Type</th>
+                <th>Rank</th>
                 <th>Session</th>
             </tr>
             {% for session in game.sessions %}
             <tr>
                 <td id="player_id_{{ session.player.id }}"><a href="/player/{{ session.player.id }}">{{ session.player.name }}</a></td>
-                <td id="player_type_{{ session.player.id }}">{% if session.player_type == "human" %}{{ emojis['HUMAN']|safe }}{% else %}{{ emojis['AI']|safe }}{% endif %}{% if session.winner %}{{ emojis['WIN']|safe }}{% endif %}</td>
+                <td id="player_tile_{{ session.player.id }}">{{ emojis[session.tile.name]|safe }}</td>
+                <td id="player_type_{{ session.player.id }}">{% if session.player_type == "human" %}{{ emojis['HUMAN']|safe }}{% else %}{{ emojis['AI']|safe }}{% endif %}</td>
+                <td id="player_rank_{{ session.player.id }}">
+                    {% if session.game.complete %}
+                    {% if session.win %}
+                    {{ emojis['WIN']|safe }}
+                    {% elif session.tie %}
+                    {{ emojis['TIE']|safe }}
+                    {% else %}
+                    {{ session.rank }}
+                    {% endif %}
+                    {% else %}
+                    {{ emojis['UNKNOWN']|safe }}
+                    {% endif %}
+                </td>
                 <td id="player_session_{{ session.player.id }}">{{ session.socket_id }}</td>
             </tr>
             {% endfor %}

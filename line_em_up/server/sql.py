@@ -1,8 +1,8 @@
 from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, CheckConstraint, UniqueConstraint, ForeignKey, Enum
-from typing import Tuple, List
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, CheckConstraint, UniqueConstraint, ForeignKey, Enum, Float
+from typing import Tuple, List, Dict
 
-from ..common.packets import Parameters
+from ..common.packets import Parameters, MoveStatistics
 from ..common.types import Tile, PlayerType, AlgorithmType, HeuristicType
 from ..common.utils import tile_to_emoji, make_line
 
@@ -15,59 +15,108 @@ class Game(Base):
     sessions = relationship("GameSession", back_populates="game")
     tiles = relationship("GameTile")
 
+    max_player_count = Column(Integer, nullable=False)
     board_size = Column(Integer, nullable=False)
-    block_count = Column(Integer, nullable=False)
     line_up_size = Column(Integer, nullable=False)
-    depth1 = Column(Integer, nullable=False)
-    depth2 = Column(Integer, nullable=False)
+    _depths = Column("depths", String, nullable=False)
     max_time = Column(Integer, nullable=False)
     algorithm = Column(Enum(AlgorithmType), nullable=False)
-    heuristic1 = Column(Enum(HeuristicType), nullable=False)
-    heuristic2 = Column(Enum(HeuristicType), nullable=False)
+    _heuristics = Column("heuristics", String, nullable=False)
     listed = Column(Boolean, default=False)
 
     last_time = Column(Integer)
-    tile_turn = Column(Enum(Tile), default=Tile.WHITE)
+    tile_turn = Column(Enum(Tile), default=Tile.P1)
     complete = Column("complete", Boolean, default=False)
-    tile_winner = Column(Enum(Tile), default=Tile.EMPTY)
+    tile_winner = Column("winner", Enum(Tile), default=Tile.EMPTY)
+    _tile_losers = Column("losers", String, default="")
+
+    @property
+    def player_tiles(self) -> List[Tile]:
+        return [tile for tile in Tile if tile.value >= 0 and tile.value < self.max_player_count]
+
+    @property
+    def tile_losers(self) -> List[Tile]:
+        tiles = self._tile_losers.split(',')
+
+        if len(tiles) == 1 and tiles[0].strip() == "": return []
+
+        tiles = [int(tile) for tile in tiles]
+
+        return [Tile(tile) for tile in tiles]
+
+    @tile_losers.setter
+    def _set_tile_losers(self, losers: List[Tile]):
+        self._tile_losers = ','.join(str(tile.value) for tile in losers)
+
+    def add_loser(self, tile: Tile):
+        if tile in self.tile_losers: return
+        self._set_tile_losers = [tile] + self.tile_losers
+
+    @property
+    def depths(self) -> List[int]:
+        return [int(depth) for depth in self._depths.split(',')]
+
+    @depths.setter
+    def depths(self, depths: List[int]):
+        self._depths = ','.join(str(depth) for depth in depths)
+
+    @property
+    def heuristics(self) -> List[HeuristicType]:
+        return [HeuristicType(heuristic) for heuristic in self._heuristics.split(',')]
+
+    @heuristics.setter
+    def heuristics(self, heuristics: List[HeuristicType]):
+        strings = []
+
+        for heuristic in heuristics:
+            if isinstance(heuristic, str):
+                strings.append(HeuristicType(heuristic).value)
+            else:
+                strings.append(heuristic.value)
+
+        self._heuristics = ','.join(strings)
 
     @property
     def parameters(self):
-        return Parameters.from_dict(vars(self))
+        d = dict(vars(self))
+        d['block_count'] = self.block_count
+        d['depths'] = self.depths
+        d['heuristics'] = self.heuristics
+
+        return Parameters.from_dict(d)
 
     @property
     def started(self):
-        return self.player_count == 2
+        return self.player_count >= self.max_player_count
+
+    @property
+    def ranks(self) -> Dict[int, int]:
+        ranks = {}
+
+        for session in self.sessions:
+            if not session.player.id in ranks:
+                ranks[session.player.id] = session.rank
+
+        return ranks
 
     @property
     def player_count(self):
         return len(set([session.player.id for session in self.sessions]))
-
-    @property
-    def winner(self):
-        if self.tile_winner == Tile.EMPTY:
-            return None
-
-        for session in self.sessions:
-            if session.tile == self.tile_winner:
-                return session.player
 
     def get_player_tile(self, player_id: str) -> Tile:
         for session in self.sessions:
             if session.player.id == player_id:
                 return session.tile
 
-        player_count = self.player_count
-        if player_count == 0:
-            return Tile.WHITE
-        elif player_count == 1:
-            return Tile.BLACK
-        else:
-            raise Exception("Cannot get tile type.")
+        return Tile(self.player_count)
 
     @property
     def blocks(self):
         return [(tile.x, tile.y) for tile in filter(lambda tile: tile.type == Tile.BLOCK, self.tiles)]
+
+    @property
+    def block_count(self) -> int:
+        return len(self.blocks)
 
     @property
     def moves(self):
@@ -90,9 +139,37 @@ class Game(Base):
     def pretty_board(self) -> List[List[str]]:
         return [[tile_to_emoji(v) for v in row] for row in self.tile_board]
 
+    @property
+    def tile_order(self) -> List[Tile]:
+        tiles = self.player_tiles
+
+        for tile in self.tile_losers:
+            tiles.remove(tile)
+
+        return tiles
+
+    @property
+    def next_tile(self) -> Tile:
+        tiles = self.player_tiles
+        i = tiles.index(self.tile_turn)
+
+        while True:
+            i = (i + 1) % len(tiles)
+            tile = tiles[i]
+
+            if not tile in self.tile_losers:
+                return tile
+
     def check_complete(self) -> bool:
         if self.complete: 
             return True
+
+        if len(self.tile_losers) >= self.max_player_count - 1:
+            for tile in self.player_tiles:
+                if not tile in self.tile_losers:
+                    self.tile_winner = tile
+                    break
+            return True 
 
         for tile in self.tiles:
             for direction in [(1, 0), (1, 1), (0, 1), (1, -1)]:
@@ -155,25 +232,47 @@ class GameSession(Base):
 
     @property
     def heuristic(self) -> HeuristicType:
-        if self.tile == Tile.WHITE:
-            return self.game.heuristic1
-        else:
-            return self.game.heuristic2
+        return self.game.heuristics[self.tile.value]
 
     @property
     def depth(self) -> int:
-        if self.tile == Tile.WHITE:
-            return self.game.depth1
-        else:
-            return self.game.depth2
+        return self.game.depths[self.tile.value]
 
     @property
     def is_turn(self) -> bool:
         return self.game.tile_turn == self.tile
 
     @property
-    def winner(self) -> bool:
+    def win(self) -> bool:
         return self.game.tile_winner == self.tile
+
+    @property
+    def tie(self) -> bool:
+        return self.game.complete and self.game.tile_winner == Tile.EMPTY and not self.tile in self.game.tile_losers
+
+    @property
+    def rank(self) -> int:
+        if not self.game.complete:
+            return 0
+
+        if not self.game.tile_winner == Tile.EMPTY:
+            if self.tile == self.game.tile_winner:
+                return 1
+
+            if self.game.max_player_count == 2:
+                return 2
+            
+            for i, tile in enumerate(self.game.tile_losers, 3):
+                if tile == self.tile:
+                    return i
+
+            return 2
+        else:
+            for i, tile in enumerate(self.game.tile_losers, 2):
+                if tile == self.tile:
+                    return i
+
+            return 1
 
     def __repr__(self):
         return f"GameSession(game_id={self.game_id}, player_id={self.player_id}, socket_id={self.socket_id})"
@@ -184,6 +283,7 @@ class GameTile(Base):
     id = Column(Integer, primary_key=True)
 
     game_id = Column(Integer, ForeignKey('games.id'), nullable=False)
+    statistics = relationship("Statistics")
 
     x = Column(Integer, nullable=False)
     y = Column(Integer, nullable=False) 
@@ -191,6 +291,46 @@ class GameTile(Base):
 
     def __repr__(self):
         return f"Tile(x={self.x}, y={self.y}, type={self.type})"
+
+class Statistics(Base):
+    __tablename__ = 'statistics'
+
+    id = Column(Integer, primary_key=True)
+
+    tile_id = Column(Integer, ForeignKey('tiles.id'), nullable=False)
+
+    _node_times = Column("node_times", String, nullable=False)
+    _depth_counts = Column("depth_counts", String, nullable=False)
+    average_recursive_depth = Column(Float, nullable=False)
+
+    @property
+    def node_count(self) -> int:
+        return len(self.node_times)
+
+    @property
+    def node_times(self) -> List[int]:
+        return [int(time) for time in self._node_times.split(",")]
+
+    @node_times.setter
+    def node_times(self, times: List[int]):
+        self._node_times = ','.join(str(time) for time in times)
+
+    @property
+    def depth_counts(self) -> List[int]:
+        return [int(count) for count in self._depth_counts.split(",")]
+
+    @depth_counts.setter
+    def depth_counts(self, counts: List[int]):
+        self._depth_counts = ','.join(str(count) for count in counts)
+
+    @property
+    def average_depth(self) -> float:
+        if len(self.depth_counts) == 0: return 0
+
+        return sum(depth * count for depth, count in enumerate(self.depth_counts, 1)) / sum(self.depth_counts)
+
+    def __repr__(self):
+        return f"Statistics(tile={self.tile_id})"
 
 class Player(Base):
     __tablename__ = 'players'
@@ -219,8 +359,11 @@ class Player(Base):
         score = 0
 
         for session in self.unique_sessions:
-            if session.game.winner:
-                score += 2 if session.winner else -1
+            if session.game.complete:
+                if session.game.tile_winner == Tile.EMPTY:
+                    score += 0 if session.rank == 1 else -1
+                else:
+                    score += 2 if session.rank == 1 else -1
         
         return score
 

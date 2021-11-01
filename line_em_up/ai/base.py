@@ -1,17 +1,32 @@
 from ..client.algorithm import Algorithm, Heuristic
-from ..common import PlayPacket, Move, Board
+from ..common import PlayPacket, MovePacket, MoveStatistics
+import random
 
 # TODO: Implement these classes.
 
 class MiniMax(Algorithm):
-    def next_move(self, packet: PlayPacket) -> Move:
+    def next_move(self, packet: PlayPacket) -> MovePacket:
         print(packet)
-        return (0, 0)
+        return MovePacket(
+            move=(random.randint(0, self.board_size - 1), random.randint(0, self.board_size - 1)),
+            statistics=MoveStatistics(
+                node_times=[0, 0, 0],
+                depth_counts=[1, 1, 1],
+                average_recursive_depth=0
+            )
+        )
 
 class AlphaBeta(Algorithm):
-    def next_move(self, packet: PlayPacket) -> Move:
+    def next_move(self, packet: PlayPacket) -> MovePacket:
         print(packet)
-        return (0, 0)
+        return MovePacket(
+            move=(random.randint(0, self.board_size - 1), random.randint(0, self.board_size - 1)),
+            statistics=MoveStatistics(
+                node_times=[0, 0, 0],
+                depth_counts=[1, 1, 1],
+                average_recursive_depth=0
+            )
+        )
 
 class Heuristic1(Heuristic):
     def get_score(self, data: any) -> float:
