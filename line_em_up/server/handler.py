@@ -8,7 +8,7 @@ import time
 from ..common.exceptions import LEMException
 from ..common.types import Tile, PlayerType
 from ..common.packets import Parameters, PlayPacket, MovePacket
-from .sql import GameSession, Game, Player, GameTile, Statistics
+from ..common.sql import GameSession, Game, Player, GameTile, Statistics
 
 class ServerHandler:
     session: Session

@@ -2,9 +2,9 @@ from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, CheckConstraint, UniqueConstraint, ForeignKey, Enum, Float
 from typing import Tuple, List, Dict
 
-from ..common.packets import Parameters, MoveStatistics
-from ..common.types import Tile, PlayerType, AlgorithmType, HeuristicType
-from ..common.utils import tile_to_emoji, make_line
+from .packets import Parameters, MoveStatistics
+from .types import Tile, PlayerType, AlgorithmType, HeuristicType
+from .utils import tile_to_emoji, make_line
 
 Base = declarative_base()
 

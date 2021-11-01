@@ -7,9 +7,9 @@ import os.path
 from typing import Dict, List
 import random
 
+from ..common.sql import Base
 from ..common import Parameters, MovePacket, tile_to_emoji, ErrorPacket, WinPacket, JoinResponsePacket, JoinPacket, ParametersPacket, ViewPacket, LEMException, Tile, GameUUID, PlayerUUID, PlayerType, Emojis
 from .config import ServerConfig
-from .sql import Base
 from .handler import ServerHandler
 
 class Server:
