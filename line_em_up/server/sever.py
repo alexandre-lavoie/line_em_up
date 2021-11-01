@@ -225,8 +225,8 @@ class Server:
                     )
 
                     emit("win", packet.to_dict(), to=session.game.id)
-                else:
-                    emit("play", request.handler.get_play_packet(socket_id=request.sid).to_dict(), to=session.game.id)
+
+                emit("play", request.handler.get_play_packet(socket_id=request.sid).to_dict(), to=session.game.id)
 
         @socketio.on("parameters")
         def parameters(data):

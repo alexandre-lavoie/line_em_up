@@ -15,11 +15,23 @@
                 socket.emit("view", { game_id: GAME_ID });
             });
 
-            socket.on("error", handle_error);
+            socket.on("error", ({ error }) => {
+                if(error === "No game with game_id.") {
+                    window.location.replace("/");
+                } else if(error === "Could not join game.") {
+                    PLAYER_NAME = null;
+                    document.getElementById("join_container").classList.remove("d-none");
+                }
+
+                if(PLAYER_NAME) addTileClick(playHandler);
+
+                set_message(error);
+            });
 
             function joinHandler() {
                 let pid = document.getElementById("player_name");
                 PLAYER_NAME = pid.value;
+                document.getElementById("join_container").classList.add("d-none");
                 join(pid.value, GAME_ID);
             }
 
@@ -32,10 +44,8 @@
 
                 set_message("Waiting for Opponent");
 
-                document.getElementById("join_container").remove();
+                document.getElementById("join_container").classList.add("d-none");
                 document.getElementById("board_container").classList.remove("d-none");
-
-                addTileClick();
             });
 
             socket.on("win", data => {
@@ -46,6 +56,7 @@
                 let tile_id = event.target.id;
                 let split = tile_id.split("_");
                 let move = [parseInt(split[3]), parseInt(split[2])];
+                removeTileClick();
                 play(move);
             }
 
