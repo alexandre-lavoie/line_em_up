@@ -134,14 +134,15 @@ class MovePacket:
 
     def to_dict(self):
         d = vars(self)
+        nd = {}
 
         (x, y) = d['move']
-        d['move'] = (x, y)
+        nd['move'] = (x, y)
 
-        if 'statistics' in d:
-            d['statistics'] = d['statistics'].to_dict()
+        if d['statistics']:
+            nd['statistics'] = d['statistics'].to_dict()
 
-        return d
+        return nd
 
     @classmethod
     def from_dict(cls, d: any):
