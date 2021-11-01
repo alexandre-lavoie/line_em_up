@@ -7,12 +7,13 @@ import itertools
 @dataclass
 class Parameters:
     board_size: int
-    block_count: int
     line_up_size: int
     max_time: float
     algorithm: AlgorithmType
     depths: List[int]
     heuristics: List[HeuristicType]
+    blocks: List[Tuple[int, int]] = None
+    block_count: int = 0
     max_player_count: int = 2
     listed: bool = False
 
@@ -44,11 +45,20 @@ class Parameters:
 
     def to_dict(self):
         d = vars(self)
+        nd = {}
 
-        d['algorithm'] = d['algorithm'].value
-        d['heuristics'] = [heuristic.value for heuristic in d['heuristics']]
+        nd['max_player_count'] = d['max_player_count']
+        nd['board_size'] = d['board_size']
+        nd['line_up_size'] = d['line_up_size']
+        nd['max_time'] = d['max_time']
+        nd['algorithm'] = d['algorithm'].value
+        nd['listed'] = d['listed']
+        nd['depths'] = d['depths']
+        nd['heuristics'] = [heuristic.value for heuristic in d['heuristics']]
+        nd['block_count'] = d['block_count']
+        nd['blocks'] = d['blocks']
 
-        return d
+        return nd
 
     @classmethod
     def from_dict(cls, d: any):
@@ -58,7 +68,6 @@ class Parameters:
             nd['max_player_count'] = int(d['max_player_count'])
 
         nd['board_size'] = int(d['board_size'])
-        nd['block_count'] = int(d['block_count'])
         nd['line_up_size'] = int(d['line_up_size'])
         nd['max_time'] = float(d['max_time'])
         nd['algorithm'] = AlgorithmType(d['algorithm'])
@@ -82,6 +91,13 @@ class Parameters:
                 tag = f'heuristic{i}'
                 heuristics.append(HeuristicType(d[tag]))
         nd['heuristics'] = heuristics
+
+        if 'blocks' in d and not d['blocks'] == None:
+            nd['blocks'] = [tuple([int(v) for v in block]) for block in d['blocks']]
+            nd['block_count'] = len(nd['blocks'])
+        else:
+            nd['blocks'] = None
+            nd['block_count'] = int(d['block_count'])
 
         return Parameters(**nd)
 

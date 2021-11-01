@@ -79,6 +79,7 @@ class Game(Base):
     @property
     def parameters(self):
         d = dict(vars(self))
+
         d['block_count'] = self.block_count
         d['depths'] = self.depths
         d['heuristics'] = self.heuristics

@@ -65,14 +65,17 @@ class ServerHandler:
         
         return blocks
 
-    def _create_blocks(self, game_id: str, block_count: int, board_size: int):
-        blocks = self._get_random_block_positions(
-            block_count=block_count,
-            board_size=board_size
-        )
+    def _create_blocks(self, game_id: str, block_count: int, blocks: List[Tuple[int, int]], board_size: int):
+        if blocks:
+            target_blocks = blocks
+        else:
+            target_blocks = self._get_random_block_positions(
+                block_count=block_count,
+                board_size=board_size
+            )
 
         tiles = []
-        for x, y in blocks:
+        for x, y in target_blocks:
             tile = GameTile(
                 game_id=game_id,
                 x=x,
@@ -85,11 +88,16 @@ class ServerHandler:
 
     def create_game(self, parameters: Parameters) -> Game:
         block_count = parameters.block_count
+        blocks = parameters.blocks
 
-        pdict = parameters.to_dict()
-        del pdict['block_count']
+        nd = parameters.to_dict()
 
-        game = Game(**pdict)
+        if 'block_count' in nd:
+            del nd['block_count']
+        if 'blocks' in nd:
+            del nd['blocks']
+
+        game = Game(**nd)
 
         self.session.add(game)
         self._flush()
@@ -97,6 +105,7 @@ class ServerHandler:
         self._create_blocks(
             game_id=game.id,
             block_count=block_count,
+            blocks=blocks,
             board_size=parameters.board_size
         )
         self._commit()

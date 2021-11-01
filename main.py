@@ -31,6 +31,8 @@ def parse_args():
 
     log_parser.add_argument("--db", help="SQLite database file.", default="./data.db")
 
+    experiment_parser = type_parser.add_parser("experiment")
+
     return parser.parse_args()
 
 def main():
@@ -82,6 +84,10 @@ def main():
         log_main(LogConfig(
             db=os.path.abspath(args.db)
         ))
+    elif args.type == "experiment":
+        from line_em_up.experiment import experiment_main
+
+        experiment_main()
 
 if __name__ == "__main__":
     main()

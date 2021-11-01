@@ -145,6 +145,24 @@ class Server:
                 "open_games": [game.id for game in request.handler.get_open_games(player_name=player_name)]
             }
 
+        @app.route('/api/new', methods=['POST'])
+        def games_new():
+            try:
+                if request.get_json():
+                    parameters = self.__get_dataclass(Parameters, request.get_json())
+                    game = request.handler.create_game(parameters=parameters)
+                elif request.form:
+                    parameters = self.__get_dataclass(Parameters, request.form)
+                    game = request.handler.create_game(parameters=parameters)
+                else:
+                    return {"error": "No valid handler."}
+
+                return {"game_id": game.id}
+            except LEMException as err:
+                return {"error": str(err)}
+            finally:
+                pass
+
         @socketio.on("view")
         def view(data):
             request.handler = ServerHandler(session=SessionMaker())
