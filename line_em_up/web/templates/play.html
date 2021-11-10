@@ -93,7 +93,6 @@
         {% include "board.html" %}
         <br/>
         </div>
-        
 
         <div id="join_container" class="mx-4">
             <div class="card p-4">
@@ -106,10 +105,7 @@
             <br/>
             <p class="text-center">OR</p>
 
-            <div class="card p-4">
-                <pre class="m-0">python3 main.py client ai --game {{game.id}}</pre>
-                <pre class="m-0">python3 main.py client human --game {{game.id}}</pre>
-            </div>
+            {% include "aijoin.html" %}
         </div>
     </body>
 </html>

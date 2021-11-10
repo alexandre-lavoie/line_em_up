@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from ..common import PlayPacket, Move, Parameters, Board, Tile
+from ..common import PlayPacket, Move, Parameters, Tile
 
 class Heuristic(ABC):
     __tile: Tile

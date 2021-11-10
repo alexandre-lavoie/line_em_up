@@ -15,8 +15,11 @@
         <br/>
         {% endif %}
 
-        <form class="card mx-4 p-4" method="POST">
-            <label for="board_size">Player Count:</label>
+        <form method="POST">
+            <h5 class="text-center">Game Settings</h5>
+
+            <div class="card mx-4 p-4">
+            <label for="max_player_count">Player Count:</label>
             <input class="form-control" type="number" name="max_player_count" id="max_player_count" min="2" max="4" value="2"/>
             <br/>
 
@@ -29,9 +32,21 @@
             <br/>
 
             <label for="line_up_size">Line Up Size:</label>
-            <input class="form-control" type="number" name="line_up_size" id="block_count" min="3" value="3"/>
+            <input class="form-control" type="number" name="line_up_size" id="line_up_size" min="3" value="3"/>
             <br/>
 
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="listed" id="listed">
+                <label class="form-check-label" for="listed">
+                    Is Public?
+                </label>
+            </div>
+            </div>
+
+            <br/>
+            
+            <h5 class="text-center">AI Settings</h5>
+            <div class="card mx-4 p-4">
             <label>Depths:</label>
             <div class="input-group">
                 <input class="form-control" type="number" name="depth1" id="depth1" min="1" value="1"/>
@@ -59,17 +74,12 @@
                 <input class="form-control" type="number" name="heuristic3" id="heuristic3" min="1" max="2" value="1"/>
                 <input class="form-control" type="number" name="heuristic4" id="heuristic4" min="1" max="2" value="1"/>
             </div>
-            <br/>
-
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="listed" id="listed">
-                <label class="form-check-label" for="listed">
-                    Is Public?
-                </label>
             </div>
             <br/>
 
+            <div class="card mx-4 p-4">
             <input class="btn btn-primary" type="submit" value="Start"/>
+            </div>
         </form>
     </body>
 </html>

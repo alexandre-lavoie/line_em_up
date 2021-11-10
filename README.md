@@ -54,6 +54,7 @@ Add these configs to your local `.env` file.
 
 ```
 # Client
+AI_PATH=../line_em_up_ai/
 URL=http://localhost:5000/
 
 # Server

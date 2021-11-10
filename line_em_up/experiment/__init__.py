@@ -3,6 +3,7 @@ import time
 import threading
 import multiprocessing
 import os.path
+import logging
 
 from line_em_up.server.config import ServerConfig
 
@@ -50,13 +51,16 @@ def play(url: str, parameters: Parameters):
         thread.join()
 
 def experiment(config: ServerConfig, parameters: Parameters):
+    logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
+
     server_process = multiprocessing.Process(target=server_main, args=(config,))
     url = f"http://localhost:{config.port}/"
     server_process.start()
 
     time.sleep(2)
 
-    for parameters in parameters:
+    for i, parameters in enumerate(parameters, 1):
+        print("Experiment", i, "-", parameters.algorithm.name, "\n")
         play(url=url, parameters=parameters)
 
     server_process.terminate()
@@ -70,7 +74,7 @@ def experiment_main(config: ExperimentConfig):
             max_time=5,
             algorithm=AlgorithmType.MINIMAX,
             depths=[6, 6],
-            heuristics=[HeuristicType.ONE, HeuristicType.ONE]
+            heuristics=[HeuristicType.ONE, HeuristicType.TWO]
         ),
         Parameters(
             board_size=4,
@@ -79,7 +83,7 @@ def experiment_main(config: ExperimentConfig):
             max_time=1,
             algorithm=AlgorithmType.ALPHABETA,
             depths=[6, 6],
-            heuristics=[HeuristicType.ONE, HeuristicType.ONE]
+            heuristics=[HeuristicType.ONE, HeuristicType.TWO]
         ),
         Parameters(
             board_size=5,
@@ -88,7 +92,7 @@ def experiment_main(config: ExperimentConfig):
             max_time=1,
             algorithm=AlgorithmType.ALPHABETA,
             depths=[2, 6],
-            heuristics=[HeuristicType.ONE, HeuristicType.ONE]
+            heuristics=[HeuristicType.ONE, HeuristicType.TWO]
         ),
         Parameters(
             board_size=5,
@@ -97,7 +101,7 @@ def experiment_main(config: ExperimentConfig):
             max_time=5,
             algorithm=AlgorithmType.ALPHABETA,
             depths=[6, 6],
-            heuristics=[HeuristicType.ONE, HeuristicType.ONE]
+            heuristics=[HeuristicType.ONE, HeuristicType.TWO]
         ),
         Parameters(
             board_size=8,
@@ -106,7 +110,7 @@ def experiment_main(config: ExperimentConfig):
             max_time=1,
             algorithm=AlgorithmType.ALPHABETA,
             depths=[2, 6],
-            heuristics=[HeuristicType.ONE, HeuristicType.ONE]
+            heuristics=[HeuristicType.ONE, HeuristicType.TWO]
         ),
         Parameters(
             board_size=8,
@@ -115,7 +119,7 @@ def experiment_main(config: ExperimentConfig):
             max_time=5,
             algorithm=AlgorithmType.ALPHABETA,
             depths=[2, 6],
-            heuristics=[HeuristicType.ONE, HeuristicType.ONE]
+            heuristics=[HeuristicType.ONE, HeuristicType.TWO]
         ),
         Parameters(
             board_size=8,
@@ -124,7 +128,7 @@ def experiment_main(config: ExperimentConfig):
             max_time=1,
             algorithm=AlgorithmType.ALPHABETA,
             depths=[6, 6],
-            heuristics=[HeuristicType.ONE, HeuristicType.ONE]
+            heuristics=[HeuristicType.ONE, HeuristicType.TWO]
         ),
         Parameters(
             board_size=8,
@@ -133,7 +137,7 @@ def experiment_main(config: ExperimentConfig):
             max_time=5,
             algorithm=AlgorithmType.ALPHABETA,
             depths=[6, 6],
-            heuristics=[HeuristicType.ONE, HeuristicType.ONE]
+            heuristics=[HeuristicType.ONE, HeuristicType.TWO]
         )
     ]
 

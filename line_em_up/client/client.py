@@ -118,7 +118,8 @@ class NetworkClient(Client):
 
             if packet.tile == self._tile:
                 print("My Turn")
-                sio.emit("play", self.next_move(packet).to_dict())
+                next_packet = self.next_move(packet)
+                sio.emit("play", next_packet.to_dict())
             else:
                 print("Opponent's Turn")
 
