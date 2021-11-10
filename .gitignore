@@ -4,3 +4,4 @@ screenshots/
 *.pyc
 *.db
 logs/
+experiments/

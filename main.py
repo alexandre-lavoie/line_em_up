@@ -30,8 +30,12 @@ def parse_args():
     log_parser = type_parser.add_parser("log")
 
     log_parser.add_argument("--db", help="SQLite database file.", default="./data.db")
+    log_parser.add_argument("--ltype", help="Type of log(s) to generate.", choices=("all", "game", "score"), default="all")
 
     experiment_parser = type_parser.add_parser("experiment")
+
+    experiment_parser.add_argument("--port", help="Port for local server.", type=int, default=5000)
+    experiment_parser.add_argument("--etype", help="Type of experiments to perform.", choices=("all", "game", "score"), default="all")
 
     return parser.parse_args()
 
@@ -82,12 +86,16 @@ def main():
         import os.path
 
         log_main(LogConfig(
-            db=os.path.abspath(args.db)
+            db=os.path.abspath(args.db),
+            type=args.ltype
         ))
     elif args.type == "experiment":
-        from line_em_up.experiment import experiment_main
+        from line_em_up.experiment import experiment_main, ExperimentConfig
 
-        experiment_main()
+        experiment_main(ExperimentConfig(
+            port=args.port,
+            type=args.etype
+        ))
 
 if __name__ == "__main__":
     main()

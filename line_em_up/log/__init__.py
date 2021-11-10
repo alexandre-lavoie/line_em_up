@@ -156,12 +156,17 @@ def log_main(config: LogConfig):
     )
     SessionMaker = sessionmaker(bind=engine)
 
-    make_game_traces(
-        db_session=SessionMaker(),
-        log_dir="./logs/"
-    )
+    if not os.path.exists("./logs/"):
+        os.mkdir("./logs/")
 
-    make_scoreboard(
-        db_session=SessionMaker(),
-        log_dir="./logs/"
-    )
+    if config.type in ["all", "game"]:
+        make_game_traces(
+            db_session=SessionMaker(),
+            log_dir="./logs/"
+        )
+
+    if config.type in ["all", "score"]:
+        make_scoreboard(
+            db_session=SessionMaker(),
+            log_dir="./logs/"
+        )

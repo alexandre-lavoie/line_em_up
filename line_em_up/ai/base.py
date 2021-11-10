@@ -10,9 +10,9 @@ class MiniMax(Algorithm):
         return MovePacket(
             move=(random.randint(0, self.board_size - 1), random.randint(0, self.board_size - 1)),
             statistics=MoveStatistics(
-                node_times=[0, 0, 0],
+                node_times=[0.1] * 3,
                 depth_counts=[1] * self.max_depth,
-                average_recursive_depth=0
+                average_recursive_depth=1
             )
         )
 
@@ -22,9 +22,9 @@ class AlphaBeta(Algorithm):
         return MovePacket(
             move=(random.randint(0, self.board_size - 1), random.randint(0, self.board_size - 1)),
             statistics=MoveStatistics(
-                node_times=[0, 0, 0],
+                node_times=[0.1] * 3,
                 depth_counts=[1] * self.max_depth,
-                average_recursive_depth=0
+                average_recursive_depth=1
             )
         )
 

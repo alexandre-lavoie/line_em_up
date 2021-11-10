@@ -1,11 +1,18 @@
 import requests
 import time
 import threading
+import multiprocessing
+import os.path
 
-from ..client import client_main
-from ..client.config import ClientConfig
+from line_em_up.server.config import ServerConfig
+
+from .config import ExperimentConfig
+from ..server import server_main, ServerConfig
+from ..client import client_main, ClientConfig
 from ..common.packets import Parameters
 from ..common.types import AlgorithmType, HeuristicType, PlayerType
+
+AI_NAMES = ["AI1", "AI2"]
 
 class ClientThread(threading.Thread):
     __config: ClientConfig
@@ -17,7 +24,44 @@ class ClientThread(threading.Thread):
     def run(self):
         client_main(self.__config)
 
-def experiment_main():
+def play(url: str, parameters: Parameters):
+    res = requests.post(url + "api/new", json=parameters.to_dict())
+    data = res.json()
+
+    if 'error' in data:
+        raise Exception(f"Error while creating game: {data['error']}")
+
+    game_id = data['game_id']
+
+    client_threads = []
+
+    for name in AI_NAMES:
+        thread = ClientThread(ClientConfig(
+            url=url,
+            player_name=name,
+            player_type=PlayerType.AI,
+            game_id=game_id
+        ))
+        thread.start()
+        client_threads.append(thread)
+        time.sleep(0.5)
+
+    for thread in client_threads:
+        thread.join()
+
+def experiment(config: ServerConfig, parameters: Parameters):
+    server_process = multiprocessing.Process(target=server_main, args=(config,))
+    url = f"http://localhost:{config.port}/"
+    server_process.start()
+
+    time.sleep(2)
+
+    for parameters in parameters:
+        play(url=url, parameters=parameters)
+
+    server_process.terminate()
+
+def experiment_main(config: ExperimentConfig):
     PARAMETERS = [
         Parameters(
             board_size=4,
@@ -93,32 +137,21 @@ def experiment_main():
         )
     ]
 
-    AI_NAMES = ["AI1", "AI2"]
-    url = "http://localhost:5000/"
+    if not os.path.exists("./experiments/"):
+        os.mkdir("./experiments")
 
-    game_ids = []
-    for parameters in PARAMETERS[:1]:
-        res = requests.post(url + "api/new", json=parameters.to_dict())
-        data = res.json()
+    db_name = f"{int(time.time())}"
 
-        if 'error' in data:
-            raise Exception(f"Error while creating game: {j['error']}")
-        else:
-            game_ids.append(data['game_id'])
+    if config.type in ["all", "game"]:
+        experiment(ServerConfig(
+            debug=False,
+            port=config.port,
+            db=f"./experiments/{db_name}.db"
+        ), PARAMETERS)
 
-    for game_id in game_ids:
-        threads = []
-
-        for name in AI_NAMES:
-            thread = ClientThread(ClientConfig(
-                url=url,
-                player_name=name,
-                player_type=PlayerType.AI,
-                game_id=game_id
-            ))
-            thread.start()
-            threads.append(thread)
-            time.sleep(0.5)
-
-        for thread in threads:
-            thread.join()
+    if config.type in ["all", "score"]:
+        experiment(ServerConfig(
+            debug=False,
+            port=config.port + 1,
+            db=f"./experiments/{db_name}s.db"
+        ), PARAMETERS * 10)
