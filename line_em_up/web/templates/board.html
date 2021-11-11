@@ -1,7 +1,14 @@
 <table id="game_board" class="table table-bordered d-flex justify-content-center">
+    <tr>
+    <td></td>
+    {% for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[:board|length] %}
+    <th class="text-center">{{ c }}</th>
+    {% endfor %}
+    </tr>
     {% for row in board %}
     {% set outindex = loop.index0 %}
     <tr>
+    <th class="text-center">{{ loop.index0 }}</th>
     {% for v in row %}
     <td class="text-center" id="game_board_{{outindex}}_{{loop.index0}}">{{ v|safe }}</td>
     {% endfor %}

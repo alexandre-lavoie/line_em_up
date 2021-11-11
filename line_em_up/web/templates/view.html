@@ -35,10 +35,6 @@
                 cell = row.insertCell(-1);
                 cell.id = `player_rank_${player_id}`;
                 cell.innerHTML = "{{ emojis['UNKNOWN']|safe }}";
-
-                cell = row.insertCell(-1);
-                cell.id = `player_session_${player_id}`;
-                cell.innerText = `${socket_id}`;
             });
 
             socket.on("win", ({ ranks }) => {
@@ -89,7 +85,6 @@
                 <th>Tile</th>
                 <th>Type</th>
                 <th>Rank</th>
-                <th>Session</th>
             </tr>
             {% for session in game.sessions %}
             <tr>
@@ -109,7 +104,6 @@
                     {{ emojis['UNKNOWN']|safe }}
                     {% endif %}
                 </td>
-                <td id="player_session_{{ session.player.id }}">{{ session.socket_id }}</td>
             </tr>
             {% endfor %}
         </table>

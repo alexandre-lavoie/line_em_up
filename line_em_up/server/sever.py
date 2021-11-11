@@ -19,7 +19,7 @@ class Server:
         self._config=config
 
     def __random_board(self, board_size: int) -> List[List[str]]:
-        return [[tile_to_emoji(tile) for tile in random.choices(list(Tile), k=board_size)] for _ in range(board_size)]
+        return [[tile_to_emoji(tile) for tile in random.choices([Tile.EMPTY, Tile.P1, Tile.P2, Tile.BLOCK], k=board_size)] for _ in range(board_size)]
 
     def __get_dataclass(self, dataclass: any, data: any):
         try:

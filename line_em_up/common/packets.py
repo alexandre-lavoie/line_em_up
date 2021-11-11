@@ -3,6 +3,7 @@ from dataclasses_json import dataclass_json
 from .types import AlgorithmType, PlayerUUID, GameUUID, PlayerType, Move, Tile, HeuristicType
 from typing import List, Tuple, Union, Set, Dict
 import itertools
+import string
 
 @dataclass
 class Parameters:
@@ -93,8 +94,62 @@ class Parameters:
         nd['heuristics'] = heuristics
 
         if 'blocks' in d and not d['blocks'] == None:
-            nd['blocks'] = [tuple([int(v) for v in block]) for block in d['blocks']]
-            nd['block_count'] = len(nd['blocks'])
+            if isinstance(d['blocks'], str):
+                if len(d['blocks'].strip()) == 0:
+                    nd['blocks'] = []
+                    nd['block_count'] = 0
+                elif d['blocks'].isnumeric():
+                    nd['blocks'] = None
+                    nd['block_count'] = int(d['blocks'])
+                elif '(' in d['blocks']:
+                    nd['blocks'] = []
+                    for coordinate in d['blocks'].split(')'):
+                        if len(coordinate.strip()) == 0:
+                            continue
+
+                        inner = coordinate[coordinate.index('(') + 1:]
+
+                        if "," in inner:
+                            x, y = inner.split(",")
+                        elif " " in inner:
+                            x, y = inner.split(" ")
+
+                        if x.isnumeric():
+                            x = int(x)
+                        elif x in string.ascii_uppercase:
+                            x = string.ascii_uppercase.index(x)
+                        elif x in string.ascii_lowercase:
+                            x = string.ascii_lowercase.index(x)
+
+                        nd['blocks'].append((x, int(y)))
+                    nd['block_count'] = len(nd['blocks'])
+                else:
+                    nd['blocks'] = []
+                    for coordinate in d['blocks'].split(','):
+                        if len(coordinate.strip()) == 0:
+                            continue
+
+                        sc = coordinate.strip().split(" ")
+
+                        if len(sc) == 1:
+                            x, y = sc[0]
+                        else:
+                            x, y = sc
+
+                        if x.isnumeric():
+                            x = int(x)
+                        elif x in string.ascii_uppercase:
+                            x = string.ascii_uppercase.index(x)
+                        elif x in string.ascii_lowercase:
+                            x = string.ascii_lowercase.index(x)
+
+                        nd['blocks'].append((x, int(y)))
+                    nd['block_count'] = len(nd['blocks'])
+            elif isinstance(nd['blocks'], list):
+                nd['blocks'] = [tuple([int(v) for v in block]) for block in d['blocks']]
+                nd['block_count'] = len(nd['blocks'])
+            else:
+                raise Exception("Cannot handle blocks type.")
         else:
             nd['blocks'] = None
             nd['block_count'] = int(d['block_count'])
