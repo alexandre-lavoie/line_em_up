@@ -23,7 +23,10 @@ class ClientThread(threading.Thread):
         self.__config = config
 
     def run(self):
-        client_main(self.__config)
+        client = client_main(self.__config)
+
+        while not client.done:
+            time.sleep(1)
 
 def play(url: str, parameters: Parameters):
     res = requests.post(url + "api/new", json=parameters.to_dict())
@@ -45,7 +48,7 @@ def play(url: str, parameters: Parameters):
         ))
         thread.start()
         client_threads.append(thread)
-        time.sleep(0.5)
+        time.sleep(1)
 
     for thread in client_threads:
         thread.join()

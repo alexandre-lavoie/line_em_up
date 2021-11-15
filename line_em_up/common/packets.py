@@ -145,7 +145,7 @@ class Parameters:
 
                         nd['blocks'].append((x, int(y)))
                     nd['block_count'] = len(nd['blocks'])
-            elif isinstance(nd['blocks'], list):
+            elif isinstance(d['blocks'], list):
                 nd['blocks'] = [tuple([int(v) for v in block]) for block in d['blocks']]
                 nd['block_count'] = len(nd['blocks'])
             else:
