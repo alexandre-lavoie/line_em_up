@@ -8,6 +8,7 @@
         </script>
         <script type="text/javascript" charset="utf-8">
             let socket = io();
+            let complete = false;
 
             socket.on("connect", () => {
                 socket.emit("view", { game_id: GAME_ID });
@@ -39,6 +40,7 @@
 
             socket.on("win", ({ ranks }) => {
                 set_message("Game Complete");
+                complete = true;
 
                 Object.entries(ranks).forEach(([player_id, rank]) => {
                     let player_rank = document.getElementById(`player_rank_${player_id}`);
@@ -49,7 +51,7 @@
             });
 
             socket.on("play", ({ tile, emoji_board }) => {
-                if(tile != null) {
+                if(tile != null && !complete) {
                     set_message("Playing");
                 }
 
