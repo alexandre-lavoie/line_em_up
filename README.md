@@ -2,6 +2,16 @@
 
 <center><img src="./images/board.png" alt="Board"/></center>
 
+## Repos
+
+- https://github.com/alexandre-lavoie/line_em_up
+- https://github.com/alexandre-lavoie/line_em_up_ai
+- https://github.com/alexandre-lavoie/line_em_up_client
+
+## Team
+
+JustAlex - Alexandre Lavoie (40129457)
+
 ## Intro
 
 Line 'Em Up is Tic Tac Toe reinvented. This new game adds dynamic board sizes and solve lengths, and a new "blocked" tile. This makes for a fun and unique AI challenge! The game concept was proposed by [Dr. Leila Kosseim](https://users.encs.concordia.ca/~kosseim/) for the COMP 472 class at Concordia.
