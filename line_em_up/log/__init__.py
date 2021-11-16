@@ -89,64 +89,76 @@ def make_game_traces(db_session: any, log_dir: str):
 
     db_session.close()
 
+def chunks(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
 def make_scoreboard(db_session: any, log_dir: str):
-    games = [game for game in db_session.query(Game).all() if game.complete]
+    all_games = [game for game in db_session.query(Game).order_by(Game.id.asc()).all() if game.complete]
+    sorted_games = list(zip(*list(chunks(all_games, 8))))
 
-    log = []
+    for games in sorted_games:
+        config_game = games[0]
+        n = config_game.board_size
+        b = config_game.block_count
+        s = config_game.line_up_size
+        t = config_game.max_time
 
-    log.append(f"n={games[0].board_size} b={games[0].block_count} s={games[0].line_up_size} t={games[0].max_time}")
-    log.append("")
+        log = []
 
-    for session in games[0].unique_sessions:
-        log.append(f"Player {session.player.name}: d={session.depth} a={session.algorithm == AlgorithmType.ALPHABETA} e{session.heuristic}")
+        log.append(f"n={n} b={b} s={s} t={t}")
+        log.append("")
 
-    log.append("")
-    log.append(f"{len(games)} games")
-    log.append("")
+        for session in config_game.unique_sessions:
+            log.append(f"Player {session.player.name}: d={session.depth} a={session.algorithm == AlgorithmType.ALPHABETA} e{session.heuristic}")
 
-    for heuristic in HeuristicType:
-        win_count = sum(len([session for session in game.unique_sessions if session.win and session.heuristic == heuristic]) for game in games)
-        log.append(f"Total wins for heuristic e{heuristic.value}: {win_count} ({(win_count / len(games)) * 100}%)")
+        log.append("")
+        log.append(f"{len(games)} games")
+        log.append("")
 
-    log.append("")
+        for heuristic in HeuristicType:
+            win_count = sum(len([session for session in game.unique_sessions if session.win and session.heuristic == heuristic]) for game in games)
+            log.append(f"Total wins for heuristic e{heuristic.value}: {win_count} ({(win_count / len(games)) * 100}%)")
 
-    average_times = 0
-    evaluation_count = 0
-    depth_counts = []
-    average_depth = 0
-    average_recursive_depth = 0
-    average_moves = 0
+        log.append("")
 
-    stats_count = 0
-    for game in games:
-        all_statistics = [move.statistics[0] for move in game.move_tiles if move.statistics]
+        average_times = 0
+        evaluation_count = 0
+        depth_counts = []
+        average_depth = 0
+        average_recursive_depth = 0
+        average_moves = 0
 
-        if len(all_statistics) == 0:
-            continue
+        stats_count = 0
+        for game in games:
+            all_statistics = [move.statistics[0] for move in game.move_tiles if move.statistics]
 
-        stats_count += 1
-        average_times += sum(sum(statistics.node_times) for statistics in all_statistics) / len(all_statistics)
-        evaluation_count += sum(sum(statistics.depth_counts) for statistics in all_statistics)
-        game_depth_counts = [sum(dv) for dv in itertools.zip_longest(*[statistics.depth_counts for statistics in all_statistics], fillvalue=0)]
-        depth_counts = [sum(dv) for dv in itertools.zip_longest(depth_counts, game_depth_counts, fillvalue=0)]
-        average_depth += sum(statistics.average_depth for statistics in all_statistics) / len(all_statistics)
-        average_recursive_depth += sum(statistics.average_recursive_depth for statistics in all_statistics) / len(all_statistics)
-        average_moves += len(game.moves)
+            if len(all_statistics) == 0:
+                continue
 
-    average_times /= stats_count
-    average_depth /= stats_count
-    average_recursive_depth /= stats_count
-    average_moves /= stats_count
+            stats_count += 1
+            average_times += sum(sum(statistics.node_times) for statistics in all_statistics) / len(all_statistics)
+            evaluation_count += sum(sum(statistics.depth_counts) for statistics in all_statistics)
+            game_depth_counts = [sum(dv) for dv in itertools.zip_longest(*[statistics.depth_counts for statistics in all_statistics], fillvalue=0)]
+            depth_counts = [sum(dv) for dv in itertools.zip_longest(depth_counts, game_depth_counts, fillvalue=0)]
+            average_depth += sum(statistics.average_depth for statistics in all_statistics) / len(all_statistics)
+            average_recursive_depth += sum(statistics.average_recursive_depth for statistics in all_statistics) / len(all_statistics)
+            average_moves += len(game.moves)
 
-    log.append(f"i   Average evaluation time: {average_times}s")
-    log.append(f"ii  Total heuristic evaluations: {evaluation_count}")
-    log.append(f"iii Evaluations by depth: {depth_counts}")
-    log.append(f"iv  Average evaluation depth: {average_depth}")
-    log.append(f"v   Average recursion depth: {average_recursive_depth}")
-    log.append(f"vi  Average moves per game: {average_moves}")
+        average_times /= stats_count
+        average_depth /= stats_count
+        average_recursive_depth /= stats_count
+        average_moves /= stats_count
 
-    with open(os.path.join(log_dir, f"scoreboard.txt"), "w") as h:
-        h.write('\n'.join(log))
+        log.append(f"i   Average evaluation time: {average_times}s")
+        log.append(f"ii  Total heuristic evaluations: {evaluation_count}")
+        log.append(f"iii Evaluations by depth: {depth_counts}")
+        log.append(f"iv  Average evaluation depth: {average_depth}")
+        log.append(f"v   Average recursion depth: {average_recursive_depth}")
+        log.append(f"vi  Average moves per game: {average_moves}")
+
+        with open(os.path.join(log_dir, f"scoreboard-{n}-{b}-{s}-{t}.txt"), "w") as h:
+            h.write('\n'.join(log))
 
     db_session.close()
 
