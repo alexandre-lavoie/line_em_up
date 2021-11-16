@@ -5,3 +5,5 @@ screenshots/
 *.db
 logs/
 experiments/
+*.zip
+*.pdf
