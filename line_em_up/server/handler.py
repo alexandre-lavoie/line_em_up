@@ -51,7 +51,7 @@ class ServerHandler:
         elif player_name:
             return self.session.query(Player).filter(Player.name == player_name).first()
         else:
-            raise HandlerException("Cannot get player without any filter.")
+            raise LEMException("Cannot get player without any filter.")
 
     def get_players(self) -> List[Player]:
         return self.session.query(Player).all()
